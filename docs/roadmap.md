@@ -68,14 +68,14 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
   - **Note:** `drift`/`drift_dev` pinned to `^2.31.0` (not 2.32.x) to resolve `analyzer` version conflict with `riverpod_generator ^4.0.3`. See implementation_plan for full root cause analysis.
   - **Note:** `flutter_lints` replaced by `very_good_analysis` (stricter, enterprise-grade lint rules).
 - [x] Run `flutter pub get`
-- [ ] Create feature-first directory structure under `lib/`:
+- [x] Create feature-first directory structure under `lib/`:
   - `core/constants/`, `core/theme/`, `core/router/`, `core/providers/`, `core/utils/`, `core/database/`
   - `features/auth/data/`, `features/auth/domain/`, `features/auth/presentation/`
   - `features/tasks/data/`, `features/tasks/domain/`, `features/tasks/presentation/screens/`, `features/tasks/presentation/widgets/`
   - `features/sync/data/`, `features/sync/domain/`
 - [ ] Create `.env` with placeholder Supabase URL and anon key
 - [ ] Add `.env`, `*.g.dart`, `*.freezed.dart`, `build/` to `.gitignore`
-- [ ] Initialize Git repository, create initial commit
+- [x] Initialize Git repository, create initial commit
 - [ ] Verify `flutter analyze` passes with zero warnings
 
 ---
