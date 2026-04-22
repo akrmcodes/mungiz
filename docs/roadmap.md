@@ -73,10 +73,10 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
   - `features/auth/data/`, `features/auth/domain/`, `features/auth/presentation/`
   - `features/tasks/data/`, `features/tasks/domain/`, `features/tasks/presentation/screens/`, `features/tasks/presentation/widgets/`
   - `features/sync/data/`, `features/sync/domain/`
-- [ ] Create `.env` with placeholder Supabase URL and anon key
-- [ ] Add `.env`, `*.g.dart`, `*.freezed.dart`, `build/` to `.gitignore`
+- [x] Create `.env` with placeholder Supabase URL and anon key
+- [x] Add `.env`, `*.g.dart`, `*.freezed.dart`, `build/` to `.gitignore`
 - [x] Initialize Git repository, create initial commit
-- [ ] Verify `flutter analyze` passes with zero warnings
+- [x] Verify `flutter analyze` passes with zero warnings
 
 ---
 
