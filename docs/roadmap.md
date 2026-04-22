@@ -61,11 +61,13 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Run `flutter create` with org name and project name `mungiz`
-- [ ] Enable web support (`flutter config --enable-web`)
-- [ ] Add production dependencies: `flutter_riverpod`, `riverpod_annotation`, `go_router`, `supabase_flutter`, `freezed_annotation`, `json_annotation`, `drift`, `sqlite3_flutter_libs`, `path_provider`, `path`, `gap`, `google_fonts`, `flutter_animate`, `connectivity_plus`
-- [ ] Add dev dependencies: `build_runner`, `riverpod_generator`, `freezed`, `json_serializable`, `drift_dev`, `mocktail`, `very_good_analysis`
-- [ ] Run `flutter pub get`
+- [x] Run `flutter create` with org name and project name `mungiz`
+- [x] Enable web support (`flutter config --enable-web`)
+- [x] Add production dependencies: `flutter_riverpod`, `riverpod_annotation`, `go_router`, `supabase_flutter`, `freezed_annotation`, `json_annotation`, `drift`, `sqlite3_flutter_libs`, `path_provider`, `path`, `gap`, `google_fonts`, `flutter_animate`, `connectivity_plus`
+- [x] Add dev dependencies: `build_runner`, `riverpod_generator`, `freezed`, `json_serializable`, `drift_dev`, `mocktail`, `very_good_analysis`
+  - **Note:** `drift`/`drift_dev` pinned to `^2.31.0` (not 2.32.x) to resolve `analyzer` version conflict with `riverpod_generator ^4.0.3`. See implementation_plan for full root cause analysis.
+  - **Note:** `flutter_lints` replaced by `very_good_analysis` (stricter, enterprise-grade lint rules).
+- [x] Run `flutter pub get`
 - [ ] Create feature-first directory structure under `lib/`:
   - `core/constants/`, `core/theme/`, `core/router/`, `core/providers/`, `core/utils/`, `core/database/`
   - `features/auth/data/`, `features/auth/domain/`, `features/auth/presentation/`
