@@ -1,14 +1,16 @@
 /// GoRouter configuration with authentication guard.
 ///
 /// Routes are defined declaratively. An auth redirect guard forces
-/// unauthenticated users to `/login` and prevents authenticated users
-/// from accessing the login/register screens.
+/// unauthenticated users to `/login` and prevents authenticated
+/// users from accessing the login/register screens.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/providers/supabase_providers.dart';
+import 'package:mungiz/features/auth/presentation/login_screen.dart';
+import 'package:mungiz/features/auth/presentation/register_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,16 +20,15 @@ part 'app_router.g.dart';
 /// changes.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
-  // Listen to auth state changes so the router re-evaluates
-  // redirects. The value itself is unused — we only need the
-  // reactive subscription.
+  // Listen to auth state changes so the router
+  // re-evaluates redirects on sign-in / sign-out.
   ref.watch(authStateChangesProvider);
 
   return GoRouter(
     initialLocation: RoutePaths.home,
     debugLogDiagnostics: true,
 
-    // ── Redirect (Auth Guard) ──────────────────────────────
+    // ── Redirect (Auth Guard) ──────────────────────────
     redirect: (context, state) {
       final session =
           Supabase.instance.client.auth.currentSession;
@@ -50,29 +51,27 @@ GoRouter appRouter(Ref ref) {
       return null;
     },
 
-    // ── Routes ─────────────────────────────────────────────
+    // ── Routes ─────────────────────────────────────────
     routes: [
       GoRoute(
         path: RoutePaths.home,
         name: 'home',
         builder: (context, state) =>
-            const _PlaceholderScreen(title: 'الرئيسية'),
+            const _PlaceholderScreen(
+          title: 'الرئيسية',
+        ),
       ),
       GoRoute(
         path: RoutePaths.login,
         name: 'login',
         builder: (context, state) =>
-            const _PlaceholderScreen(
-          title: 'تسجيل الدخول',
-        ),
+            const LoginScreen(),
       ),
       GoRoute(
         path: RoutePaths.register,
         name: 'register',
         builder: (context, state) =>
-            const _PlaceholderScreen(
-          title: 'إنشاء حساب',
-        ),
+            const RegisterScreen(),
       ),
       GoRoute(
         path: RoutePaths.createTask,
@@ -94,14 +93,11 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Placeholder screen — replaced in Stage 4+ with real screens
-// ─────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────
+// Placeholder screen — replaced as features are implemented
+// ───────────────────────────────────────────────────────────
 
-/// Temporary placeholder used to verify routing and theming.
-///
-/// Will be replaced with actual feature screens in subsequent
-/// stages.
+/// Temporary placeholder for routes not yet implemented.
 class _PlaceholderScreen extends StatelessWidget {
   const _PlaceholderScreen({required this.title});
 

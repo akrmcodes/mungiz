@@ -138,8 +138,8 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Create `core/providers/connectivity_provider.dart`: provider wrapping `connectivity_plus`
 - [x] Create `core/router/app_router.dart`: GoRouter with placeholder routes + auth guard
 - [x] Create `core/constants/app_constants.dart`: route paths as `const` strings
-- [ ] Run `build_runner`
-- [ ] Verify app launches on Android, iOS, Web with themed shell
+- [x] Run `build_runner`
+- [x] Verify app launches on Android, iOS, Web with themed shell
 
 ---
 
