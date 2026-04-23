@@ -101,15 +101,15 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Set up foreign key constraints on both tables
 - [x] Enable RLS on `profiles` and `tasks` tables with all four policies per plan.md §3.3
 - [x] Create DB trigger to auto-insert `profiles` on `auth.users` INSERT
-- [] Create `updated_at` auto-update trigger
+- [x] Create `updated_at` auto-update trigger
 - [x] Enable Supabase Auth (email/password)
 - [x] Record Supabase URL and anon key in `.env`
-- [ ] Create `core/database/app_database.dart`: Drift database class with `tasks` and `profiles` tables mirroring Supabase schema
-- [ ] Add `sync_status` column to Drift `tasks` table (enum: synced, pending_create, pending_update, pending_delete)
-- [ ] Create `sync_queue` Drift table: (id, table_name, record_id, operation, payload, created_at)
-- [ ] Run `build_runner` for Drift codegen
-- [ ] Verify Drift DB opens and migrates correctly on app launch
-- [ ] Verify Supabase tables and RLS via SQL editor test queries
+- [x] Create `core/database/app_database.dart`: Drift database class with `tasks` and `profiles` tables mirroring Supabase schema
+- [x] Add `sync_status` column to Drift `tasks` table (enum: synced, pending_create, pending_update, pending_delete)
+- [x] Create `sync_queue` Drift table: (id, table_name, record_id, operation, payload, created_at)
+- [x] Run `build_runner` for Drift codegen
+- [x] Verify Drift DB opens and migrates correctly on app launch
+- [x] Verify Supabase tables and RLS via SQL editor test queries
 
 ---
 

@@ -91,10 +91,12 @@ class Tasks extends Table {
   DateTimeColumn get dueAt => dateTime().nullable()();
 
   /// UUID of the user who created this task.
+  @ReferenceName('createdTasks')
   TextColumn get createdBy =>
       text().references(Profiles, #id)();
 
   /// UUID of the user this task is assigned to.
+  @ReferenceName('assignedTasks')
   TextColumn get assignedTo =>
       text().references(Profiles, #id)();
 
@@ -124,7 +126,7 @@ class SyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
 
   /// Name of the Supabase table this mutation targets (e.g. `tasks`).
-  TextColumn get tableName => text()();
+  TextColumn get targetTable => text().named('table_name')();
 
   /// UUID of the affected record.
   TextColumn get recordId => text()();
