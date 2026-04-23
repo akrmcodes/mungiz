@@ -157,19 +157,19 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/auth/domain/user_profile.dart`: Freezed model matching `profiles` table
-- [ ] Run `build_runner` for Freezed codegen
-- [ ] Create `features/auth/data/auth_repository.dart`:
+- [x] Create `features/auth/domain/user_profile.dart`: Freezed model matching `profiles` table
+- [x] Run `build_runner` for Freezed codegen
+- [x] Create `features/auth/data/auth_repository.dart`:
   - `signUp(email, password)` — register + cache profile to Drift
   - `signIn(email, password)` — login + cache profile to Drift
   - `signOut()` — terminate session, clear sensitive local data
   - `currentUser` / `authStateChanges` — stream of auth state
-- [ ] Create auth Riverpod providers/notifiers (`authStateProvider`, `authNotifierProvider`)
-- [ ] Create `features/auth/presentation/login_screen.dart`: email/password fields, validation, loading state, link to register, error display
-- [ ] Create `features/auth/presentation/register_screen.dart`: email/password/confirm fields, validation, loading state, link to login, error display
-- [ ] Update GoRouter: add `/login`, `/register` routes with auth redirect guard
-- [ ] Verify: register → auto-login → home → logout → redirect to login
-- [ ] Verify: profile row auto-created in Supabase and cached in Drift
+- [x] Create auth Riverpod providers/notifiers (`authStateProvider`, `authNotifierProvider`)
+- [x] Create `features/auth/presentation/login_screen.dart`: email/password fields, validation, loading state, link to register, error display
+- [x] Create `features/auth/presentation/register_screen.dart`: email/password/confirm fields, validation, loading state, link to login, error display
+- [x] Update GoRouter: add `/login`, `/register` routes with auth redirect guard
+- [x] Verify: register → auto-login → home → logout → redirect to login
+- [x] Verify: profile row auto-created in Supabase and cached in Drift
 
 ---
 
@@ -188,23 +188,23 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/tasks/domain/task.dart`: Freezed model with `@JsonKey` for snake_case
-- [ ] Run `build_runner`
-- [ ] Create `features/tasks/data/task_local_repository.dart` (Drift):
+- [x] Create `features/tasks/domain/task.dart`: Freezed model with `@JsonKey` for snake_case
+- [x] Run `build_runner`
+- [x] Create `features/tasks/data/task_local_repository.dart` (Drift):
   - `watchTasks()` — reactive stream of tasks from local DB
   - `insertTask(task)` — insert with `sync_status: pending_create`
   - `toggleComplete(taskId, isCompleted)` — update locally, mark `sync_status: pending_update`
   - `getTaskById(id)` — single task lookup
-- [ ] Create `features/tasks/data/task_remote_repository.dart` (Supabase):
+- [x] Create `features/tasks/data/task_remote_repository.dart` (Supabase):
   - `fetchAllTasks()` — pull all user tasks from Supabase (used by sync)
   - `pushTask(task)` — upsert to Supabase
   - `pushCompletion(taskId, isCompleted)` — update remote
-- [ ] Create task Riverpod notifiers: `taskListNotifierProvider` watching Drift, methods for `addTask()`, `toggleComplete()`
-- [ ] Create `features/tasks/presentation/widgets/task_card.dart`: task display with completion toggle
-- [ ] Create `features/tasks/presentation/widgets/empty_tasks.dart`: illustrated empty state with CTA
-- [ ] Create `features/tasks/presentation/screens/task_list_screen.dart`: displays tasks via Drift watch, toggle for completed, FAB for create, handles loading/error/empty/data
-- [ ] Create `features/tasks/presentation/screens/create_task_screen.dart`: title (required), description (optional), due date picker (optional), submit with validation
-- [ ] Update GoRouter: `/`, `/tasks/create`
+- [x] Create task Riverpod notifiers: `taskListNotifierProvider` watching Drift, methods for `addTask()`, `toggleComplete()`
+- [x] Create `features/tasks/presentation/widgets/task_card.dart`: task display with completion toggle
+- [x] Create `features/tasks/presentation/widgets/empty_tasks.dart`: illustrated empty state with CTA
+- [x] Create `features/tasks/presentation/screens/task_list_screen.dart`: displays tasks via Drift watch, toggle for completed, FAB for create, handles loading/error/empty/data
+- [x] Create `features/tasks/presentation/screens/create_task_screen.dart`: title (required), description (optional), due date picker (optional), submit with validation
+- [x] Update GoRouter: `/`, `/tasks/create`
 - [ ] Verify: create task → instant local display → mark complete → hidden → toggle to reveal
 
 ---

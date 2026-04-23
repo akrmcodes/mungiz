@@ -11,6 +11,8 @@ import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/providers/supabase_providers.dart';
 import 'package:mungiz/features/auth/presentation/login_screen.dart';
 import 'package:mungiz/features/auth/presentation/register_screen.dart';
+import 'package:mungiz/features/tasks/presentation/screens/create_task_screen.dart';
+import 'package:mungiz/features/tasks/presentation/screens/task_list_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -57,9 +59,7 @@ GoRouter appRouter(Ref ref) {
         path: RoutePaths.home,
         name: 'home',
         builder: (context, state) =>
-            const _PlaceholderScreen(
-          title: 'الرئيسية',
-        ),
+            const TaskListScreen(),
       ),
       GoRoute(
         path: RoutePaths.login,
@@ -77,9 +77,7 @@ GoRouter appRouter(Ref ref) {
         path: RoutePaths.createTask,
         name: 'createTask',
         builder: (context, state) =>
-            const _PlaceholderScreen(
-          title: 'مهمة جديدة',
-        ),
+            const CreateTaskScreen(),
       ),
       GoRoute(
         path: RoutePaths.dashboard,
