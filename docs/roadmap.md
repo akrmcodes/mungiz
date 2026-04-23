@@ -95,15 +95,15 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create Supabase project (development environment)
-- [ ] Create `profiles` table per plan.md §3.3 (id, email, display_name, avatar_url, created_at, updated_at)
-- [ ] Create `tasks` table per plan.md §3.3 (id, title, description, is_completed, due_at, created_by, assigned_to, created_at, updated_at)
-- [ ] Set up foreign key constraints on both tables
-- [ ] Enable RLS on `profiles` and `tasks` tables with all four policies per plan.md §3.3
-- [ ] Create DB trigger to auto-insert `profiles` on `auth.users` INSERT
-- [ ] Create `updated_at` auto-update trigger
-- [ ] Enable Supabase Auth (email/password)
-- [ ] Record Supabase URL and anon key in `.env`
+- [x] Create Supabase project (development environment)
+- [x] Create `profiles` table per plan.md §3.3 (id, email, display_name, avatar_url, created_at, updated_at)
+- [x] Create `tasks` table per plan.md §3.3 (id, title, description, is_completed, due_at, created_by, assigned_to, created_at, updated_at)
+- [x] Set up foreign key constraints on both tables
+- [x] Enable RLS on `profiles` and `tasks` tables with all four policies per plan.md §3.3
+- [x] Create DB trigger to auto-insert `profiles` on `auth.users` INSERT
+- [] Create `updated_at` auto-update trigger
+- [x] Enable Supabase Auth (email/password)
+- [x] Record Supabase URL and anon key in `.env`
 - [ ] Create `core/database/app_database.dart`: Drift database class with `tasks` and `profiles` tables mirroring Supabase schema
 - [ ] Add `sync_status` column to Drift `tasks` table (enum: synced, pending_create, pending_update, pending_delete)
 - [ ] Create `sync_queue` Drift table: (id, table_name, record_id, operation, payload, created_at)
