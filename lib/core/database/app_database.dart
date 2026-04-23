@@ -5,7 +5,7 @@
 ///
 /// Tables:
 ///   - [Profiles] — mirrors `public.profiles` on Supabase.
-///   - [Tasks]    — mirrors `public.tasks` with an additional [syncStatus].
+///   - [Tasks]    — mirrors `public.tasks` with an additional `syncStatus`.
 ///   - [SyncQueue] — tracks local mutations pending push to Supabase.
 library;
 
@@ -33,7 +33,8 @@ enum SyncStatus {
   /// Row was updated locally and the change has not yet been pushed.
   pendingUpdate,
 
-  /// Row was marked for deletion locally and the delete has not yet been pushed.
+  /// Row was marked for deletion locally and the delete has
+  /// not yet been pushed.
   pendingDelete,
 }
 
@@ -157,8 +158,9 @@ class AppDatabase extends _$AppDatabase {
   /// Creates the database with the default native connection.
   AppDatabase() : super(_openConnection());
 
-  /// Creates the database with a custom [QueryExecutor] — useful for testing.
-  AppDatabase.forTesting(super.executor);
+  /// Creates the database with a custom [QueryExecutor]
+  /// — useful for testing.
+  AppDatabase.forTesting(super.e);
 
   /// Bump this whenever the schema changes and add a migration strategy.
   @override
@@ -188,6 +190,6 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbDir = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbDir.path, 'mungiz.sqlite'));
-    return NativeDatabase.createInBackground(file, logStatements: false);
+    return NativeDatabase.createInBackground(file);
   });
 }

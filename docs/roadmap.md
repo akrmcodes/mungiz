@@ -128,16 +128,16 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `main.dart`: init Supabase + Drift, run app in `ProviderScope`
-- [ ] Create `app.dart`: `MaterialApp.router` with GoRouter and theme
-- [ ] Create `core/theme/app_theme.dart`: Material 3 `ThemeData`, light + dark, `ColorScheme.fromSeed()`
-- [ ] Create `core/theme/app_typography.dart`: Google Fonts text theme
-- [ ] Create `core/theme/app_spacing.dart`: spacing constants
-- [ ] Create `core/providers/supabase_providers.dart`: providers for `SupabaseClient` and `authStateChanges`
-- [ ] Create `core/providers/database_providers.dart`: provider for `AppDatabase` (Drift)
-- [ ] Create `core/providers/connectivity_provider.dart`: provider wrapping `connectivity_plus`
-- [ ] Create `core/router/app_router.dart`: GoRouter with placeholder routes + auth guard
-- [ ] Create `core/constants/app_constants.dart`: route paths as `const` strings
+- [x] Create `main.dart`: init Supabase + Drift, run app in `ProviderScope`
+- [x] Create `app.dart`: `MaterialApp.router` with GoRouter and theme
+- [x] Create `core/theme/app_theme.dart`: Material 3 `ThemeData`, light + dark, `ColorScheme.fromSeed()`
+- [x] Create `core/theme/app_typography.dart`: Google Fonts text theme
+- [x] Create `core/theme/app_spacing.dart`: spacing constants
+- [x] Create `core/providers/supabase_providers.dart`: providers for `SupabaseClient` and `authStateChanges`
+- [x] Create `core/providers/database_providers.dart`: provider for `AppDatabase` (Drift)
+- [x] Create `core/providers/connectivity_provider.dart`: provider wrapping `connectivity_plus`
+- [x] Create `core/router/app_router.dart`: GoRouter with placeholder routes + auth guard
+- [x] Create `core/constants/app_constants.dart`: route paths as `const` strings
 - [ ] Run `build_runner`
 - [ ] Verify app launches on Android, iOS, Web with themed shell
 
