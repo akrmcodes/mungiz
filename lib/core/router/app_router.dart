@@ -7,9 +7,7 @@
 ///   - StatefulShellRoute (indexedStack): hosts Branch 0 (Tasks) and
 ///     Branch 1 (Dashboard) with state preserved across tab switches.
 ///
-/// The [CreateTaskScreen] route uses `parentNavigatorKey: _rootKey`
-/// so it covers the bottom nav bar — the same pattern used to fix
-/// the blank-screen regression from the previous session.
+/// The modal routes use the root navigator key so they cover the shell.
 library;
 
 import 'package:flutter/material.dart';
@@ -27,39 +25,47 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'app_router.g.dart';
 
-// ── Navigator keys ────────────────────────────────────────────────────────
-
-/// Root navigator key — required for routes that must cover the shell
-/// (e.g. CreateTaskScreen, LoginScreen, RegisterScreen).
-final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
-
-/// Shell navigator keys — one per branch.
-final _tasksKey =
-    GlobalKey<NavigatorState>(debugLabel: 'tasks');
-final _dashboardKey =
-    GlobalKey<NavigatorState>(debugLabel: 'dashboard');
-
 // ── Provider ──────────────────────────────────────────────────────────────
 
-/// Provides the singleton [GoRouter] instance, rebuilding on auth changes.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() {
+    notifyListeners();
+  }
+}
+
+/// Provides the singleton [GoRouter] instance and refreshes redirects when
+/// auth state changes.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
-  // Rebuild router (re-evaluate redirect) when auth state changes.
-  ref.watch(authStateChangesProvider);
+  // Each router instance must own its navigator keys. The router is rebuilt
+  // when auth changes, so sharing global keys across instances can produce
+  // duplicate-key collisions while the old router is still tearing down.
+  final rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+  final tasksKey = GlobalKey<NavigatorState>(debugLabel: 'tasks');
+  final dashboardKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard');
+  final routerRefreshNotifier = _RouterRefreshNotifier();
 
-  return GoRouter(
-    navigatorKey: _rootKey,
+  ref
+    ..listen(authStateChangesProvider, (
+      previousState,
+      nextState,
+    ) {
+      routerRefreshNotifier.refresh();
+    })
+    ..onDispose(routerRefreshNotifier.dispose);
+
+  final router = GoRouter(
+    navigatorKey: rootKey,
     initialLocation: RoutePaths.home,
     debugLogDiagnostics: true,
+    refreshListenable: routerRefreshNotifier,
 
     // ── Auth redirect guard ───────────────────────────────────────
     redirect: (context, state) {
-      final session =
-          Supabase.instance.client.auth.currentSession;
+      final session = Supabase.instance.client.auth.currentSession;
       final isAuthenticated = session != null;
       final loc = state.matchedLocation;
-      final isAuthRoute =
-          loc == RoutePaths.login || loc == RoutePaths.register;
+      final isAuthRoute = loc == RoutePaths.login || loc == RoutePaths.register;
 
       if (!isAuthenticated && !isAuthRoute) {
         return RoutePaths.login;
@@ -74,13 +80,13 @@ GoRouter appRouter(Ref ref) {
     routes: [
       // ── Auth routes (full-screen, above shell) ─────────────────
       GoRoute(
-        parentNavigatorKey: _rootKey,
+        parentNavigatorKey: rootKey,
         path: RoutePaths.login,
         name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
-        parentNavigatorKey: _rootKey,
+        parentNavigatorKey: rootKey,
         path: RoutePaths.register,
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
@@ -88,7 +94,7 @@ GoRouter appRouter(Ref ref) {
 
       // ── Create Task (above shell — covers the nav bar) ─────────
       GoRoute(
-        parentNavigatorKey: _rootKey,
+        parentNavigatorKey: rootKey,
         path: RoutePaths.createTask,
         name: 'createTask',
         builder: (context, state) => const CreateTaskScreen(),
@@ -96,33 +102,30 @@ GoRouter appRouter(Ref ref) {
 
       // ── Shell: Tab navigation ───────────────────────────────────
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            ScaffoldWithNavBar(
+        builder: (context, state, navigationShell) => ScaffoldWithNavBar(
           navigationShell: navigationShell,
         ),
         branches: [
           // Branch 0 — Tasks (initial tab, path = '/')
           StatefulShellBranch(
-            navigatorKey: _tasksKey,
+            navigatorKey: tasksKey,
             routes: [
               GoRoute(
                 path: RoutePaths.home,
                 name: 'home',
-                builder: (context, state) =>
-                    const TaskListScreen(),
+                builder: (context, state) => const TaskListScreen(),
               ),
             ],
           ),
 
           // Branch 1 — Dashboard (path = '/dashboard')
           StatefulShellBranch(
-            navigatorKey: _dashboardKey,
+            navigatorKey: dashboardKey,
             routes: [
               GoRoute(
                 path: RoutePaths.dashboard,
                 name: 'dashboard',
-                builder: (context, state) =>
-                    const DashboardScreen(),
+                builder: (context, state) => const DashboardScreen(),
               ),
             ],
           ),
@@ -130,4 +133,7 @@ GoRouter appRouter(Ref ref) {
       ),
     ],
   );
+
+  ref.onDispose(router.dispose);
+  return router;
 }

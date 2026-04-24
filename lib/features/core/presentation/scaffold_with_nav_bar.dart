@@ -22,8 +22,8 @@ class ScaffoldWithNavBar extends StatelessWidget {
   /// Creates a [ScaffoldWithNavBar].
   const ScaffoldWithNavBar({
     required this.navigationShell,
-    super.key,
-  });
+    Key? key,
+  }) : super(key: key ?? const ValueKey<String>('ScaffoldWithNavBar'));
 
   /// The [StatefulNavigationShell] provided by [StatefulShellRoute].
   ///
@@ -75,8 +75,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
               : colorScheme.surface,
           border: Border(
             top: BorderSide(
-              color: colorScheme.outlineVariant
-                  .withValues(alpha: 0.25),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.25),
             ),
           ),
           boxShadow: [
@@ -93,15 +92,14 @@ class ScaffoldWithNavBar extends StatelessWidget {
           top: false,
           child: NavigationBar(
             selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: (i) =>
-                _onTabSelected(context, i),
+            onDestinationSelected: (i) => _onTabSelected(context, i),
             elevation: 0,
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            indicatorColor: colorScheme.primaryContainer
-                .withValues(alpha: isDark ? 0.55 : 0.7),
-            labelBehavior:
-                NavigationDestinationLabelBehavior.alwaysShow,
+            indicatorColor: colorScheme.primaryContainer.withValues(
+              alpha: isDark ? 0.55 : 0.7,
+            ),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             animationDuration: const Duration(milliseconds: 300),
             destinations: _tabs
                 .map(
