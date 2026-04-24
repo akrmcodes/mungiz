@@ -20,6 +20,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
 import 'package:mungiz/features/auth/data/profile_repository.dart';
 import 'package:mungiz/features/tasks/presentation/providers/task_providers.dart';
+import 'package:mungiz/features/tasks/presentation/widgets/task_composer_hero.dart';
 
 /// Full-screen form for creating a new task.
 class CreateTaskScreen extends ConsumerStatefulWidget {
@@ -27,18 +28,14 @@ class CreateTaskScreen extends ConsumerStatefulWidget {
   const CreateTaskScreen({super.key});
 
   @override
-  ConsumerState<CreateTaskScreen> createState() =>
-      _CreateTaskScreenState();
+  ConsumerState<CreateTaskScreen> createState() => _CreateTaskScreenState();
 }
 
-class _CreateTaskScreenState
-    extends ConsumerState<CreateTaskScreen> {
+class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _descriptionController =
-      TextEditingController();
-  final _assignEmailController =
-      TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _assignEmailController = TextEditingController();
   final _titleFocus = FocusNode();
   final _assignEmailFocus = FocusNode();
 
@@ -74,8 +71,7 @@ class _CreateTaskScreenState
       String? assignedToId;
 
       // ── Async email lookup ──────────────────────────────────
-      final email =
-          _assignEmailController.text.trim();
+      final email = _assignEmailController.text.trim();
       if (email.isNotEmpty) {
         setState(() => _isLookingUpUser = true);
         try {
@@ -98,10 +94,11 @@ class _CreateTaskScreenState
         }
       }
 
-      await ref.read(taskActionsProvider).addTask(
+      await ref
+          .read(taskActionsProvider)
+          .addTask(
             title: _titleController.text.trim(),
-            description: _descriptionController
-                    .text.trim().isEmpty
+            description: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
             dueAt: _selectedDueDate,
@@ -118,11 +115,8 @@ class _CreateTaskScreenState
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content:
-                const Text('تم إنشاء المهمة بنجاح ✓'),
-            backgroundColor: Theme.of(context)
-                .colorScheme
-                .primary,
+            content: const Text('تم إنشاء المهمة بنجاح ✓'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -156,9 +150,7 @@ class _CreateTaskScreenState
             children: [
               Icon(
                 Icons.error_outline_rounded,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onError,
+                color: Theme.of(context).colorScheme.onError,
                 size: 20,
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -166,16 +158,13 @@ class _CreateTaskScreenState
                 child: Text(
                   message,
                   style: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onError,
+                    color: Theme.of(context).colorScheme.onError,
                   ),
                 ),
               ),
             ],
           ),
-          backgroundColor:
-              Theme.of(context).colorScheme.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(
@@ -252,9 +241,14 @@ class _CreateTaskScreenState
     return Scaffold(
       // ── App bar ─────────────────────────────────────────
       appBar: AppBar(
-        title: const Text('مهمة جديدة'),
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const SizedBox.shrink(),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
+          tooltip: 'إغلاق',
           onPressed: () => context.pop(),
         ),
       ),
@@ -273,71 +267,39 @@ class _CreateTaskScreenState
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── Section header ──────────────
-                  Text(
-                    'أضف تفاصيل مهمتك',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 400.ms)
-                      .slideY(
-                        begin: 0.1,
-                        duration: 400.ms,
-                      ),
-                  const SizedBox(
-                    height: AppSpacing.xs,
+                  const TaskComposerHero(
+                    child: TaskComposerHeroHeader(),
                   ),
-                  Text(
-                    'العنوان مطلوب، والباقي اختياري',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(
-                      color:
-                          colorScheme.onSurfaceVariant,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(
-                        delay: 100.ms,
-                        duration: 400.ms,
-                      ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // ── Title field ─────────────────
                   TextFormField(
-                    controller: _titleController,
-                    focusNode: _titleFocus,
-                    textInputAction:
-                        TextInputAction.next,
-                    maxLength: 100,
-                    decoration: InputDecoration(
-                      labelText: 'عنوان المهمة *',
-                      hintText:
-                          'مثال: مراجعة التقرير الأسبوعي',
-                      prefixIcon: const Icon(
-                        Icons.title_rounded,
-                      ),
-                      counterText: '',
-                      filled: true,
-                      fillColor: colorScheme
-                          .surfaceContainerLowest,
-                    ),
-                    validator: (value) {
-                      if (value == null ||
-                          value.trim().isEmpty) {
-                        return 'يرجى إدخال عنوان المهمة';
-                      }
-                      if (value.trim().length < 2) {
-                        return 'العنوان يجب أن يكون حرفين على الأقل';
-                      }
-                      return null;
-                    },
-                  )
+                        controller: _titleController,
+                        focusNode: _titleFocus,
+                        textInputAction: TextInputAction.next,
+                        maxLength: 100,
+                        decoration: InputDecoration(
+                          labelText: 'عنوان المهمة *',
+                          hintText: 'مثال: مراجعة التقرير الأسبوعي',
+                          prefixIcon: const Icon(
+                            Icons.title_rounded,
+                          ),
+                          counterText: '',
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerLowest,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'يرجى إدخال عنوان المهمة';
+                          }
+                          if (value.trim().length < 2) {
+                            return 'العنوان يجب أن يكون حرفين على الأقل';
+                          }
+                          return null;
+                        },
+                      )
                       .animate()
                       .fadeIn(
                         delay: 200.ms,
@@ -352,29 +314,26 @@ class _CreateTaskScreenState
 
                   // ── Description field ───────────
                   TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 4,
-                    maxLength: 500,
-                    textInputAction:
-                        TextInputAction.newline,
-                    decoration: InputDecoration(
-                      labelText: 'الوصف (اختياري)',
-                      hintText:
-                          'أضف تفاصيل إضافية عن المهمة...',
-                      prefixIcon: const Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 60,
+                        controller: _descriptionController,
+                        maxLines: 4,
+                        maxLength: 500,
+                        textInputAction: TextInputAction.newline,
+                        decoration: InputDecoration(
+                          labelText: 'الوصف (اختياري)',
+                          hintText: 'أضف تفاصيل إضافية عن المهمة...',
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.only(
+                              bottom: 60,
+                            ),
+                            child: Icon(
+                              Icons.description_outlined,
+                            ),
+                          ),
+                          alignLabelWithHint: true,
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerLowest,
                         ),
-                        child: Icon(
-                          Icons.description_outlined,
-                        ),
-                      ),
-                      alignLabelWithHint: true,
-                      filled: true,
-                      fillColor: colorScheme
-                          .surfaceContainerLowest,
-                    ),
-                  )
+                      )
                       .animate()
                       .fadeIn(
                         delay: 300.ms,
@@ -389,14 +348,14 @@ class _CreateTaskScreenState
 
                   // ── Due date picker ─────────────
                   _DueDateSelector(
-                    selectedDate: _selectedDueDate,
-                    onTap: _pickDueDate,
-                    onClear: () => setState(
-                      () => _selectedDueDate = null,
-                    ),
-                    colorScheme: colorScheme,
-                    theme: theme,
-                  )
+                        selectedDate: _selectedDueDate,
+                        onTap: _pickDueDate,
+                        onClear: () => setState(
+                          () => _selectedDueDate = null,
+                        ),
+                        colorScheme: colorScheme,
+                        theme: theme,
+                      )
                       .animate()
                       .fadeIn(
                         delay: 400.ms,
@@ -411,12 +370,12 @@ class _CreateTaskScreenState
 
                   // ── Assign-to email field ───────
                   _AssignToField(
-                    controller: _assignEmailController,
-                    focusNode: _assignEmailFocus,
-                    isLoading: _isLookingUpUser,
-                    colorScheme: colorScheme,
-                    theme: theme,
-                  )
+                        controller: _assignEmailController,
+                        focusNode: _assignEmailFocus,
+                        isLoading: _isLookingUpUser,
+                        colorScheme: colorScheme,
+                        theme: theme,
+                      )
                       .animate()
                       .fadeIn(
                         delay: 450.ms,
@@ -433,54 +392,45 @@ class _CreateTaskScreenState
 
                   // ── Submit button ───────────────
                   SizedBox(
-                    height: 56,
-                    child: FilledButton(
-                      onPressed:
-                          isBusy ? null : _handleSubmit,
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(
-                            AppSpacing.buttonRadius,
-                          ),
-                        ),
-                      ),
-                      child: isBusy
-                          ? SizedBox(
-                              height: 22,
-                              width: 22,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: colorScheme
-                                    .onPrimary,
+                        height: 56,
+                        child: FilledButton(
+                          onPressed: isBusy ? null : _handleSubmit,
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.buttonRadius,
                               ),
-                            )
-                          : Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment
-                                      .center,
-                              children: [
-                                const Icon(
-                                  Icons
-                                      .check_circle_outline_rounded,
-                                ),
-                                const SizedBox(
-                                  width: AppSpacing.sm,
-                                ),
-                                Text(
-                                  'إنشاء المهمة',
-                                  style: theme.textTheme
-                                      .labelLarge
-                                      ?.copyWith(
-                                    color: colorScheme
-                                        .onPrimary,
-                                  ),
-                                ),
-                              ],
                             ),
-                    ),
-                  )
+                          ),
+                          child: isBusy
+                              ? SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: colorScheme.onPrimary,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle_outline_rounded,
+                                    ),
+                                    const SizedBox(
+                                      width: AppSpacing.sm,
+                                    ),
+                                    Text(
+                                      'إنشاء المهمة',
+                                      style: theme.textTheme.labelLarge
+                                          ?.copyWith(
+                                            color: colorScheme.onPrimary,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      )
                       .animate()
                       .fadeIn(
                         delay: 500.ms,
@@ -537,8 +487,7 @@ class _AssignToField extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Text(
               'تعيين المهمة لشخص آخر',
-              style:
-                  theme.textTheme.labelMedium?.copyWith(
+              style: theme.textTheme.labelMedium?.copyWith(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -553,12 +502,10 @@ class _AssignToField extends StatelessWidget {
           textInputAction: TextInputAction.done,
           textDirection: TextDirection.ltr,
           decoration: InputDecoration(
-            labelText:
-                'تعيين إلى (البريد الإلكتروني)',
+            labelText: 'تعيين إلى (البريد الإلكتروني)',
             hintText: 'example@email.com',
             hintTextDirection: TextDirection.ltr,
-            prefixIcon:
-                const Icon(Icons.alternate_email_rounded),
+            prefixIcon: const Icon(Icons.alternate_email_rounded),
             suffixIcon: isLoading
                 ? const Padding(
                     padding: EdgeInsets.all(12),
@@ -571,29 +518,24 @@ class _AssignToField extends StatelessWidget {
                     ),
                   )
                 : controller.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(
-                          Icons.clear_rounded,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          controller.clear();
-                          // Force rebuild to hide the
-                          // clear button.
-                          (context as Element)
-                              .markNeedsBuild();
-                        },
-                      )
-                    : null,
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.clear_rounded,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      controller.clear();
+                      // Force rebuild to hide the
+                      // clear button.
+                      (context as Element).markNeedsBuild();
+                    },
+                  )
+                : null,
             filled: true,
-            fillColor:
-                colorScheme.surfaceContainerLowest,
-            helperText:
-                'اتركه فارغاً لإنشاء مهمة شخصية',
-            helperStyle:
-                theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant
-                  .withValues(alpha: 0.7),
+            fillColor: colorScheme.surfaceContainerLowest,
+            helperText: 'اتركه فارغاً لإنشاء مهمة شخصية',
+            helperStyle: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
           ),
           validator: (value) {
@@ -655,13 +597,11 @@ class _DueDateSelector extends StatelessWidget {
             AppSpacing.inputRadius,
           ),
           color: hasDate
-              ? colorScheme.primaryContainer
-                  .withValues(alpha: 0.3)
+              ? colorScheme.primaryContainer.withValues(alpha: 0.3)
               : colorScheme.surfaceContainerLowest,
           border: Border.all(
             color: hasDate
-                ? colorScheme.primary
-                    .withValues(alpha: 0.4)
+                ? colorScheme.primary.withValues(alpha: 0.4)
                 : colorScheme.outlineVariant,
           ),
         ),
@@ -679,23 +619,19 @@ class _DueDateSelector extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'تاريخ الاستحقاق (اختياري)',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(
-                      color:
-                          colorScheme.onSurfaceVariant,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   if (hasDate) ...[
                     const SizedBox(height: 2),
                     Text(
                       _formatDate(selectedDate!),
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),

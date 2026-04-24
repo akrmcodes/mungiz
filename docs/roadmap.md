@@ -406,10 +406,10 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Create `core/providers/theme_mode_provider.dart`: persisted theme mode (light/dark/system)
 - [x] Add theme toggle switch to app settings or app bar
 - [x] Wire theme mode provider into `MaterialApp.router`
-- [ ] Add shimmer/skeleton loading states to task list, dashboard, profile screens
-- [ ] Implement staggered list animations on task list with `flutter_animate`
-- [ ] Add hero/shared-element transitions for screen navigation
-- [ ] Create illustrated empty state widgets (no tasks, no results)
+- [x] Add shimmer/skeleton loading states to task list, dashboard, profile screens
+- [x] Implement staggered list animations on task list with `flutter_animate`
+- [x] Add hero/shared-element transitions for screen navigation
+- [x] Create illustrated empty state widgets (no tasks, no results)
 - [ ] Add subtle micro-animations: FAB entrance, card press feedback, completion checkmark
 - [ ] Implement responsive layout with `LayoutBuilder` + max-width constraint (600px)
 - [ ] Test layouts at 360px, 390px, 768px breakpoints

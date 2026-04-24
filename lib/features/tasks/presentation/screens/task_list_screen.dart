@@ -27,6 +27,7 @@ import 'package:mungiz/features/sync/presentation/widgets/sync_indicator.dart';
 import 'package:mungiz/features/tasks/presentation/providers/task_providers.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/empty_tasks.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/task_card.dart';
+import 'package:mungiz/features/tasks/presentation/widgets/task_composer_hero.dart';
 
 /// The main task list screen — the app's default landing screen.
 class TaskListScreen extends ConsumerStatefulWidget {
@@ -44,6 +45,12 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
   /// string (displayName ?? email) so repeated renders are instant.
   /// A `null` value means the lookup ran but found nothing.
   final Map<String, String?> _profileCache = {};
+
+  /// Task IDs whose entrance animation has already played.
+  ///
+  /// Keeps the staggered list from replaying when the list lazily rebuilds
+  /// off-screen items during scroll stress.
+  final Set<String> _animatedTaskIds = <String>{};
 
   /// Resolves a display name for a user ID.
   ///
@@ -179,35 +186,33 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
                       }
                     }
 
-                    return TaskCard(
-                          task: task,
-                          currentUserId: currentUserId ?? '',
-                          assigneeName: assigneeName,
-                          creatorName: creatorName,
-                          onToggleComplete: () => ref
-                              .read(
-                                taskActionsProvider,
-                              )
-                              .toggleComplete(
-                                task.id,
-                                isCompleted: !task.isCompleted,
-                              ),
-                        )
-                        .animate()
-                        .fadeIn(
-                          delay: Duration(
-                            milliseconds: (index * 50).clamp(0, 300),
-                          ),
-                          duration: 400.ms,
-                        )
-                        .slideX(
-                          begin: 0.05,
-                          delay: Duration(
-                            milliseconds: (index * 50).clamp(0, 300),
-                          ),
-                          duration: 400.ms,
-                          curve: Curves.easeOutCubic,
-                        );
+                    final itemDelay = Duration(
+                      milliseconds: index * 75,
+                    );
+                    final hasAnimatedOnce = _animatedTaskIds.contains(task.id);
+
+                    return _StaggeredTaskEntry(
+                      key: ValueKey(task.id),
+                      alreadyAnimated: hasAnimatedOnce,
+                      delay: itemDelay,
+                      onAnimationStarted: () {
+                        _animatedTaskIds.add(task.id);
+                      },
+                      child: TaskCard(
+                        task: task,
+                        currentUserId: currentUserId ?? '',
+                        assigneeName: assigneeName,
+                        creatorName: creatorName,
+                        onToggleComplete: () => ref
+                            .read(
+                              taskActionsProvider,
+                            )
+                            .toggleComplete(
+                              task.id,
+                              isCompleted: !task.isCompleted,
+                            ),
+                      ),
+                    );
                   },
                 );
               },
@@ -331,32 +336,106 @@ class _AnimatedFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
-          onPressed: onPressed,
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('مهمة جديدة'),
-          elevation: 6,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              AppSpacing.cardRadius,
-            ),
-          ),
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
+    return TaskComposerHero(
+      child:
+          FloatingActionButton.extended(
+                onPressed: onPressed,
+                heroTag: null,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('مهمة جديدة'),
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppSpacing.cardRadius,
+                  ),
+                ),
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+              )
+              .animate()
+              .fadeIn(duration: 320.ms)
+              .slideY(
+                begin: 0.16,
+                duration: 420.ms,
+                curve: Curves.easeOutCubic,
+              )
+              .scale(
+                begin: const Offset(0.96, 0.96),
+                duration: 420.ms,
+                curve: Curves.easeOutCubic,
+              ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// One-shot staggered list item motion
+// ─────────────────────────────────────────────────────────────────────────
+
+class _StaggeredTaskEntry extends StatefulWidget {
+  const _StaggeredTaskEntry({
+    required this.alreadyAnimated,
+    required this.delay,
+    required this.onAnimationStarted,
+    required this.child,
+    super.key,
+  });
+
+  final bool alreadyAnimated;
+  final Duration delay;
+  final VoidCallback onAnimationStarted;
+  final Widget child;
+
+  @override
+  State<_StaggeredTaskEntry> createState() => _StaggeredTaskEntryState();
+}
+
+class _StaggeredTaskEntryState extends State<_StaggeredTaskEntry> {
+  late bool _hasAnimatedOnce;
+
+  @override
+  void initState() {
+    super.initState();
+    _hasAnimatedOnce = widget.alreadyAnimated;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shouldAnimate = !_hasAnimatedOnce;
+
+    return Animate(
+          delay: shouldAnimate ? widget.delay : Duration.zero,
+          autoPlay: shouldAnimate,
+          value: shouldAnimate ? 0 : 1,
+          onInit: shouldAnimate
+              ? (controller) {
+                  widget.onAnimationStarted();
+                }
+              : null,
+          onComplete: shouldAnimate
+              ? (controller) {
+                  if (mounted) {
+                    setState(() {
+                      _hasAnimatedOnce = true;
+                    });
+                  }
+                }
+              : null,
+          child: widget.child,
         )
-        .animate()
-        .fadeIn(delay: 300.ms, duration: 500.ms)
+        .fadeIn(
+          duration: 260.ms,
+          curve: Curves.easeOutQuart,
+        )
         .slideY(
-          begin: 0.4,
-          delay: 300.ms,
-          duration: 500.ms,
-          curve: Curves.easeOutBack,
+          begin: 0.15,
+          duration: 480.ms,
+          curve: Curves.easeOutCubic,
         )
         .scale(
-          begin: const Offset(0.8, 0.8),
-          delay: 300.ms,
-          duration: 500.ms,
-          curve: Curves.easeOutBack,
+          begin: const Offset(0.975, 0.975),
+          duration: 420.ms,
+          curve: Curves.easeOutCubic,
         );
   }
 }
