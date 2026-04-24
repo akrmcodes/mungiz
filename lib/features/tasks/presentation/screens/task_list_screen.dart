@@ -21,6 +21,7 @@ import 'package:mungiz/core/database/app_database.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
 import 'package:mungiz/features/auth/data/auth_repository.dart';
 import 'package:mungiz/features/auth/data/profile_repository.dart';
+import 'package:mungiz/features/sync/presentation/widgets/sync_indicator.dart';
 import 'package:mungiz/features/tasks/presentation/providers/task_providers.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/empty_tasks.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/task_card.dart';
@@ -109,6 +110,9 @@ class _TaskListScreenState
         ),
         toolbarHeight: 72,
         actions: [
+          // ── Sync indicator ──
+          const SyncIndicator(),
+
           // ── Sign out ──
           IconButton(
             icon: const Icon(

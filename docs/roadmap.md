@@ -251,21 +251,21 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/sync/data/sync_engine.dart`:
+- [x] Create `features/sync/data/sync_engine.dart`:
   - `pushPendingChanges()` — iterate pending items, push to Supabase, update `sync_status`
   - `pullRemoteChanges()` — fetch from Supabase, upsert into Drift
   - `fullSync()` — push then pull
   - Error handling: retry logic with exponential backoff for transient failures
-- [ ] Create `features/sync/data/conflict_resolver.dart`: last-write-wins strategy using `updated_at`
-- [ ] Create sync Riverpod provider:
+- [x] Create `features/sync/data/conflict_resolver.dart`: last-write-wins strategy using `updated_at`
+- [x] Create sync Riverpod provider:
   - Watch connectivity state
   - Trigger `fullSync()` on connectivity restored
   - Periodic sync when online (configurable interval)
   - Expose sync status (`idle`, `syncing`, `error`, `offline`)
-- [ ] Create sync status UI indicator widget (app bar badge/icon)
-- [ ] Handle edge cases: partial sync failure (retry individual items), duplicate prevention
-- [ ] Verify: go offline → create/complete tasks → restore connection → data syncs → visible on another device
-- [ ] Verify: conflict scenario → server data correctly reconciled
+- [x] Create sync status UI indicator widget (app bar badge/icon)
+- [x] Handle edge cases: partial sync failure (retry individual items), duplicate prevention
+- [x] Verify: go offline → create/complete tasks → restore connection → data syncs → visible on another device
+- [x] Verify: conflict scenario → server data correctly reconciled
 
 ---
 

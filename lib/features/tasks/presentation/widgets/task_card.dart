@@ -378,7 +378,7 @@ class _AssignmentBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm + 2,
-        vertical: AppSpacing.xs,
+        vertical: AppSpacing.xs + 2,
       ),
       decoration: BoxDecoration(
         color: badgeColor,
@@ -391,18 +391,16 @@ class _AssignmentBadge extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 4),
-          Flexible(
+          const SizedBox(width: 6),
+          Expanded(
             child: Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: textTheme.labelSmall?.copyWith(
                 color: textColor,
                 fontWeight: FontWeight.w600,
+                height: 1.3,
               ),
             ),
           ),
