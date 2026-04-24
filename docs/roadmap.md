@@ -353,7 +353,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Verify: stats update reactively as tasks are created/completed
 
 ---
-
+<!-- 
 ### Stage 10: Export & Sharing
 
 **Goal:** Enable users to export their task lists as PDF or Excel files — high business value for reporting.
@@ -383,7 +383,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [ ] Implement "Export as PDF" flow: generate → preview → share/save
 - [ ] Implement "Export as Excel" flow: generate → share/save
 - [ ] Verify: export works offline with local data
-- [ ] Verify: generated files open correctly on all platforms
+- [ ] Verify: generated files open correctly on all platforms -->
 
 ---
 
@@ -416,7 +416,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Visual QA pass across Android, iOS, Web
 
 ---
-
+<!-- 
 ### Stage 12: Deployment & Launch
 
 **Goal:** Release to Google Play, App Store, and Web. Establish post-launch monitoring.
@@ -446,7 +446,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [ ] Integrate Sentry for crash reporting
 - [ ] Set up UptimeRobot for Supabase endpoint monitoring
 - [ ] Establish GitHub Issues templates + severity labels for bug triage
-- [ ] Document hotfix workflow and bi-weekly release cadence
+- [ ] Document hotfix workflow and bi-weekly release cadence -->
 
 ---
 

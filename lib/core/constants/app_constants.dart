@@ -24,6 +24,9 @@ abstract final class RoutePaths {
 
   /// Dashboard / analytics.
   static const String dashboard = '/dashboard';
+
+  /// Profile / account.
+  static const String profile = '/profile';
 }
 
 /// Supabase remote table names, kept in sync with `supabase/schema.sql`.

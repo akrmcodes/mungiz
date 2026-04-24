@@ -7,34 +7,116 @@ import 'package:mungiz/core/theme/app_theme.dart';
 void main() {
   test('print theme contrast ratios', () {
     final pairs = <MapEntry<String, (Color fg, Color bg)>>[
-      MapEntry('light onSurface / surface', (AppTheme.light.colorScheme.onSurface, AppTheme.light.colorScheme.surface)),
-      MapEntry('light onSurfaceVariant / surfaceContainerLowest', (AppTheme.light.colorScheme.onSurfaceVariant, AppTheme.light.colorScheme.surfaceContainerLowest)),
-      MapEntry('light outline / surfaceContainerLowest', (AppTheme.light.colorScheme.outline, AppTheme.light.colorScheme.surfaceContainerLowest)),
-      MapEntry('light outlineVariant / surfaceContainerLowest', (AppTheme.light.colorScheme.outlineVariant, AppTheme.light.colorScheme.surfaceContainerLowest)),
-      MapEntry('light outlineVariant / surface', (AppTheme.light.colorScheme.outlineVariant, AppTheme.light.colorScheme.surface)),
-      MapEntry('light surfaceTint / surface', (AppTheme.light.colorScheme.surfaceTint, AppTheme.light.colorScheme.surface)),
-      MapEntry('light onPrimary / primary', (AppTheme.light.colorScheme.onPrimary, AppTheme.light.colorScheme.primary)),
-      MapEntry('light onPrimaryContainer / primaryContainer', (AppTheme.light.colorScheme.onPrimaryContainer, AppTheme.light.colorScheme.primaryContainer)),
-      MapEntry('light onError / error', (AppTheme.light.colorScheme.onError, AppTheme.light.colorScheme.error)),
-      MapEntry('dark onSurface / surface', (AppTheme.dark.colorScheme.onSurface, AppTheme.dark.colorScheme.surface)),
-      MapEntry('dark onSurfaceVariant / surfaceContainerHighest', (AppTheme.dark.colorScheme.onSurfaceVariant, AppTheme.dark.colorScheme.surfaceContainerHighest)),
-      MapEntry('dark outline / surfaceContainerHighest', (AppTheme.dark.colorScheme.outline, AppTheme.dark.colorScheme.surfaceContainerHighest)),
-      MapEntry('dark outlineVariant / surfaceContainerHighest', (AppTheme.dark.colorScheme.outlineVariant, AppTheme.dark.colorScheme.surfaceContainerHighest)),
-      MapEntry('dark outlineVariant / surface', (AppTheme.dark.colorScheme.outlineVariant, AppTheme.dark.colorScheme.surface)),
-      MapEntry('dark surfaceTint / surface', (AppTheme.dark.colorScheme.surfaceTint, AppTheme.dark.colorScheme.surface)),
-      MapEntry('dark onPrimary / primary', (AppTheme.dark.colorScheme.onPrimary, AppTheme.dark.colorScheme.primary)),
-      MapEntry('dark onPrimaryContainer / primaryContainer', (AppTheme.dark.colorScheme.onPrimaryContainer, AppTheme.dark.colorScheme.primaryContainer)),
-      MapEntry('dark onError / error', (AppTheme.dark.colorScheme.onError, AppTheme.dark.colorScheme.error)),
+      _pair(
+        'light onSurface / surface',
+        AppTheme.light.colorScheme.onSurface,
+        AppTheme.light.colorScheme.surface,
+      ),
+      _pair(
+        'light onSurfaceVariant / surfaceContainerLowest',
+        AppTheme.light.colorScheme.onSurfaceVariant,
+        AppTheme.light.colorScheme.surfaceContainerLowest,
+      ),
+      _pair(
+        'light outline / surfaceContainerLowest',
+        AppTheme.light.colorScheme.outline,
+        AppTheme.light.colorScheme.surfaceContainerLowest,
+      ),
+      _pair(
+        'light outlineVariant / surfaceContainerLowest',
+        AppTheme.light.colorScheme.outlineVariant,
+        AppTheme.light.colorScheme.surfaceContainerLowest,
+      ),
+      _pair(
+        'light outlineVariant / surface',
+        AppTheme.light.colorScheme.outlineVariant,
+        AppTheme.light.colorScheme.surface,
+      ),
+      _pair(
+        'light surfaceTint / surface',
+        AppTheme.light.colorScheme.surfaceTint,
+        AppTheme.light.colorScheme.surface,
+      ),
+      _pair(
+        'light onPrimary / primary',
+        AppTheme.light.colorScheme.onPrimary,
+        AppTheme.light.colorScheme.primary,
+      ),
+      _pair(
+        'light onPrimaryContainer / primaryContainer',
+        AppTheme.light.colorScheme.onPrimaryContainer,
+        AppTheme.light.colorScheme.primaryContainer,
+      ),
+      _pair(
+        'light onError / error',
+        AppTheme.light.colorScheme.onError,
+        AppTheme.light.colorScheme.error,
+      ),
+      _pair(
+        'dark onSurface / surface',
+        AppTheme.dark.colorScheme.onSurface,
+        AppTheme.dark.colorScheme.surface,
+      ),
+      _pair(
+        'dark onSurfaceVariant / surfaceContainerHighest',
+        AppTheme.dark.colorScheme.onSurfaceVariant,
+        AppTheme.dark.colorScheme.surfaceContainerHighest,
+      ),
+      _pair(
+        'dark outline / surfaceContainerHighest',
+        AppTheme.dark.colorScheme.outline,
+        AppTheme.dark.colorScheme.surfaceContainerHighest,
+      ),
+      _pair(
+        'dark outlineVariant / surfaceContainerHighest',
+        AppTheme.dark.colorScheme.outlineVariant,
+        AppTheme.dark.colorScheme.surfaceContainerHighest,
+      ),
+      _pair(
+        'dark outlineVariant / surface',
+        AppTheme.dark.colorScheme.outlineVariant,
+        AppTheme.dark.colorScheme.surface,
+      ),
+      _pair(
+        'dark surfaceTint / surface',
+        AppTheme.dark.colorScheme.surfaceTint,
+        AppTheme.dark.colorScheme.surface,
+      ),
+      _pair(
+        'dark onPrimary / primary',
+        AppTheme.dark.colorScheme.onPrimary,
+        AppTheme.dark.colorScheme.primary,
+      ),
+      _pair(
+        'dark onPrimaryContainer / primaryContainer',
+        AppTheme.dark.colorScheme.onPrimaryContainer,
+        AppTheme.dark.colorScheme.primaryContainer,
+      ),
+      _pair(
+        'dark onError / error',
+        AppTheme.dark.colorScheme.onError,
+        AppTheme.dark.colorScheme.error,
+      ),
     ];
 
     for (final pair in pairs) {
       final fg = pair.value.$1;
       final bg = pair.value.$2;
       final ratio = _contrastRatio(fg, bg);
-      // ignore: avoid_print
-      print('${pair.key}: ${ratio.toStringAsFixed(2)} (${_hex(fg)} on ${_hex(bg)})');
+      debugPrint(
+        '${pair.key}: ${ratio.toStringAsFixed(2)} '
+        '(${_hex(fg)} on ${_hex(bg)})',
+      );
     }
   });
+}
+
+MapEntry<String, (Color fg, Color bg)> _pair(
+  String label,
+  Color fg,
+  Color bg,
+) {
+  return MapEntry(label, (fg, bg));
 }
 
 double _contrastRatio(Color foreground, Color background) {
@@ -50,16 +132,25 @@ double _relativeLuminance(Color color) {
     final normalized = value / 255;
     return normalized <= 0.03928
         ? normalized / 12.92
-      : math.pow((normalized + 0.055) / 1.055, 2.4).toDouble();
+        : math.pow((normalized + 0.055) / 1.055, 2.4).toDouble();
   }
 
-  // ignore: no_leading_underscores_for_local_identifiers
-  final r = channel(color.red.toDouble());
-  // ignore: no_leading_underscores_for_local_identifiers
-  final g = channel(color.green.toDouble());
-  // ignore: no_leading_underscores_for_local_identifiers
-  final b = channel(color.blue.toDouble());
+  final r = channel(color.r * 255.0);
+  final g = channel(color.g * 255.0);
+  final b = channel(color.b * 255.0);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-String _hex(Color color) => '#${color.red.toRadixString(16).padLeft(2, '0').toUpperCase()}${color.green.toRadixString(16).padLeft(2, '0').toUpperCase()}${color.blue.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+String _hex(Color color) =>
+    '#${_componentHex(color.r)}'
+    '${_componentHex(color.g)}'
+    '${_componentHex(color.b)}';
+
+String _componentHex(double value) {
+  return (value * 255)
+      .round()
+      .clamp(0, 255)
+      .toRadixString(16)
+      .padLeft(2, '0')
+      .toUpperCase();
+}

@@ -4,6 +4,7 @@
 /// persistent tab-based navigation between:
 ///   - Tab 0: المهام  (Task List)
 ///   - Tab 1: الإحصائيات (Dashboard)
+///   - Tab 2: الملف الشخصي (Profile)
 ///
 /// Design notes:
 ///   - Uses [NavigationBar] (M3) for modern pill-indicator tab style.
@@ -43,6 +44,11 @@ class ScaffoldWithNavBar extends StatelessWidget {
       label: 'الإحصائيات',
       icon: Icons.bar_chart_outlined,
       selectedIcon: Icons.bar_chart_rounded,
+    ),
+    _TabDef(
+      label: 'الملف',
+      icon: Icons.person_outline_rounded,
+      selectedIcon: Icons.person_rounded,
     ),
   ];
 

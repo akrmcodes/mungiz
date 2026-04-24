@@ -21,12 +21,10 @@ abstract class UserProfile with _$UserProfile {
     required String email,
 
     /// Timestamp when the profile was created.
-    @JsonKey(name: 'created_at')
-    required DateTime createdAt,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
 
     /// Timestamp of the last profile update.
-    @JsonKey(name: 'updated_at')
-    required DateTime updatedAt,
+    @JsonKey(name: 'updated_at') required DateTime updatedAt,
 
     /// Optional display name set by the user.
     @JsonKey(name: 'display_name') String? displayName,
@@ -38,4 +36,18 @@ abstract class UserProfile with _$UserProfile {
   /// Deserialises from a Supabase JSON row.
   factory UserProfile.fromJson(Map<String, dynamic> json) =>
       _$UserProfileFromJson(json);
+}
+
+/// Human-readable display label for a domain profile.
+extension UserProfileDisplayLabel on UserProfile {
+  /// Returns the display name when present, otherwise the email.
+  String? get displayLabel {
+    final name = displayName?.trim();
+    if (name != null && name.isNotEmpty) {
+      return name;
+    }
+
+    final normalizedEmail = email.trim();
+    return normalizedEmail.isNotEmpty ? normalizedEmail : null;
+  }
 }

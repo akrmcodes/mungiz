@@ -84,8 +84,7 @@ class _TaskCardState extends State<TaskCard>
   @override
   void didUpdateWidget(covariant TaskCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.task.isCompleted !=
-        oldWidget.task.isCompleted) {
+    if (widget.task.isCompleted != oldWidget.task.isCompleted) {
       if (widget.task.isCompleted) {
         unawaited(_checkController.forward());
       } else {
@@ -123,8 +122,7 @@ class _TaskCardState extends State<TaskCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark =
-        theme.brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
     final isCompleted = widget.task.isCompleted;
     final assignment = _assignmentType;
 
@@ -142,10 +140,8 @@ class _TaskCardState extends State<TaskCard>
           end: AlignmentDirectional.bottomEnd,
           colors: isCompleted
               ? [
-                  colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.6),
-                  colorScheme.surfaceContainerHigh
-                      .withValues(alpha: 0.4),
+                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                  colorScheme.surfaceContainerHigh.withValues(alpha: 0.4),
                 ]
               : [
                   (isDark
@@ -153,32 +149,26 @@ class _TaskCardState extends State<TaskCard>
                           : colorScheme.surface)
                       .withValues(alpha: 0.95),
                   (isDark
-                          ? colorScheme
-                              .surfaceContainerHighest
-                          : colorScheme
-                              .surfaceContainerLowest)
+                          ? colorScheme.surfaceContainerHighest
+                          : colorScheme.surfaceContainerLowest)
                       .withValues(alpha: 0.85),
                 ],
         ),
         border: Border.all(
           color: isCompleted
-              ? colorScheme.outlineVariant
-                  .withValues(alpha: 0.3)
-              : colorScheme.outlineVariant
-                  .withValues(alpha: 0.15),
+              ? colorScheme.outlineVariant.withValues(alpha: 0.3)
+              : colorScheme.outlineVariant.withValues(alpha: 0.15),
         ),
         boxShadow: isCompleted
             ? []
             : [
                 BoxShadow(
-                  color: colorScheme.shadow
-                      .withValues(alpha: 0.06),
+                  color: colorScheme.shadow.withValues(alpha: 0.06),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: colorScheme.primary
-                      .withValues(alpha: 0.04),
+                  color: colorScheme.primary.withValues(alpha: 0.04),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -199,8 +189,7 @@ class _TaskCardState extends State<TaskCard>
               AppSpacing.cardPadding,
             ),
             child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Checkbox ──────────────────────
                 _AnimatedCheckbox(
@@ -214,63 +203,46 @@ class _TaskCardState extends State<TaskCard>
                 // ── Content ──────────────────────
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Title
                       AnimatedDefaultTextStyle(
                         duration: const Duration(
                           milliseconds: 300,
                         ),
-                        style: theme
-                            .textTheme.titleMedium!
-                            .copyWith(
+                        style: theme.textTheme.titleMedium!.copyWith(
                           color: isCompleted
-                              ? colorScheme
-                                  .onSurfaceVariant
-                                  .withValues(
-                                    alpha: 0.5,
-                                  )
+                              ? colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.5,
+                                )
                               : colorScheme.onSurface,
                           decoration: isCompleted
-                              ? TextDecoration
-                                  .lineThrough
+                              ? TextDecoration.lineThrough
                               : TextDecoration.none,
-                          decorationColor: colorScheme
-                              .onSurfaceVariant
+                          decorationColor: colorScheme.onSurfaceVariant
                               .withValues(alpha: 0.4),
                         ),
                         child: Text(
                           widget.task.title,
                           maxLines: 2,
-                          overflow:
-                              TextOverflow.ellipsis,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
 
                       // Description
-                      if (widget.task.description !=
-                              null &&
-                          widget.task.description!
-                              .isNotEmpty) ...[
+                      if (widget.task.description != null &&
+                          widget.task.description!.isNotEmpty) ...[
                         const SizedBox(
                           height: AppSpacing.xs,
                         ),
                         Text(
                           widget.task.description!,
                           maxLines: 2,
-                          overflow:
-                              TextOverflow.ellipsis,
-                          style: theme
-                              .textTheme.bodySmall
-                              ?.copyWith(
-                            color: colorScheme
-                                .onSurfaceVariant
-                                .withValues(
-                                  alpha: isCompleted
-                                      ? 0.4
-                                      : 0.7,
-                                ),
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: isCompleted ? 0.4 : 0.7,
+                            ),
                           ),
                         ),
                       ],
@@ -294,22 +266,18 @@ class _TaskCardState extends State<TaskCard>
                       // in-flight the badge is hidden (SizedBox.shrink),
                       // then animates in via fadeIn+scale once setState fires
                       // with the real email/display-name string.
-                      if (assignment !=
-                          _AssignmentType.personal) ...[
+                      if (assignment != _AssignmentType.personal) ...[
                         Builder(
                           builder: (_) {
                             final resolvedName =
-                                assignment ==
-                                        _AssignmentType
-                                            .assignedToOther
-                                    ? widget.assigneeName
-                                    : widget.creatorName;
+                                assignment == _AssignmentType.assignedToOther
+                                ? widget.assigneeName
+                                : widget.creatorName;
                             if (resolvedName == null) {
                               return const SizedBox.shrink();
                             }
                             return Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const SizedBox(
                                   height: AppSpacing.sm,
@@ -374,14 +342,11 @@ class _AssignmentBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isToOther =
-        type == _AssignmentType.assignedToOther;
+    final isToOther = type == _AssignmentType.assignedToOther;
 
     final badgeColor = isToOther
-        ? colorScheme.tertiaryContainer
-            .withValues(alpha: isDark ? 0.4 : 0.5)
-        : colorScheme.secondaryContainer
-            .withValues(alpha: isDark ? 0.4 : 0.5);
+        ? colorScheme.tertiaryContainer.withValues(alpha: isDark ? 0.4 : 0.5)
+        : colorScheme.secondaryContainer.withValues(alpha: isDark ? 0.4 : 0.5);
 
     final textColor = isToOther
         ? colorScheme.onTertiaryContainer
@@ -391,50 +356,48 @@ class _AssignmentBadge extends StatelessWidget {
         ? Icons.arrow_back_rounded
         : Icons.arrow_forward_rounded;
 
+    final displayName = _makeBreakableProfileName(name);
     final label = isToOther
-        ? 'مُسندة إلى: $name'
-        : 'بواسطة: $name';
-
+        ? 'مسندة إلى: $displayName'
+        : 'بواسطة: $displayName';
 
     return Container(
-      // Let the badge grow to fill available width so the label
-      // always has the full card width to render into.
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm + 2,
-        vertical: AppSpacing.xs + 2,
-      ),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: (isToOther
-                  ? colorScheme.tertiary
-                  : colorScheme.secondary)
-              .withValues(alpha: 0.2),
-        ),
-      ),
-      // Wrap keeps icon + label on one line when there is room,
-      // and wraps the label to the next line for long email addresses.
-      child: Wrap(
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 6,
-        runSpacing: 2,
-        children: [
-          Icon(icon, size: 14, color: textColor),
-          Text(
-            label,
-            style: textTheme.labelSmall?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-              height: 1.3,
-            ),
-            // No maxLines / no overflow — let the text wrap freely.
-            softWrap: true,
+          // Let the badge grow to fill available width so the label
+          // always has the full card width to render into.
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm + 2,
+            vertical: AppSpacing.xs + 2,
           ),
-        ],
-      ),
-    )
+          decoration: BoxDecoration(
+            color: badgeColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: (isToOther ? colorScheme.tertiary : colorScheme.secondary)
+                  .withValues(alpha: 0.2),
+            ),
+          ),
+          // Wrap keeps icon + label on one line when there is room,
+          // and wraps the label to the next line for long email addresses.
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 2,
+            children: [
+              Icon(icon, size: 14, color: textColor),
+              Text(
+                label,
+                style: textTheme.labelSmall?.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+                softWrap: true,
+                overflow: TextOverflow.visible,
+              ),
+            ],
+          ),
+        )
         .animate()
         .fadeIn(duration: 300.ms)
         .scale(
@@ -442,6 +405,18 @@ class _AssignmentBadge extends StatelessWidget {
           duration: 300.ms,
         );
   }
+}
+
+String _makeBreakableProfileName(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty || !trimmed.contains('@')) {
+    return trimmed;
+  }
+
+  return trimmed
+      .replaceAll('@', '@\u200B')
+      .replaceAll('.', '.\u200B')
+      .replaceAll('_', '_\u200B');
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -470,20 +445,15 @@ class _AnimatedCheckbox extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isCompleted
-            ? colorScheme.primary
-            : Colors.transparent,
+        color: isCompleted ? colorScheme.primary : Colors.transparent,
         border: Border.all(
-          color: isCompleted
-              ? colorScheme.primary
-              : colorScheme.outlineVariant,
+          color: isCompleted ? colorScheme.primary : colorScheme.outlineVariant,
           width: 2,
         ),
         boxShadow: isCompleted
             ? [
                 BoxShadow(
-                  color: colorScheme.primary
-                      .withValues(alpha: 0.3),
+                  color: colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 8,
                   spreadRadius: 1,
                 ),
@@ -547,8 +517,7 @@ class _DueDateBadge extends StatelessWidget {
 
     if (isCompleted) {
       badgeColor = colorScheme.surfaceContainerHighest;
-      textColor = colorScheme.onSurfaceVariant
-          .withValues(alpha: 0.5);
+      textColor = colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
       icon = Icons.event_available_rounded;
       label = _formatDate(dueAt);
     } else if (isOverdue) {
@@ -562,37 +531,36 @@ class _DueDateBadge extends StatelessWidget {
       icon = Icons.today_rounded;
       label = 'اليوم';
     } else {
-      badgeColor = colorScheme.primaryContainer
-          .withValues(alpha: 0.5);
+      badgeColor = colorScheme.primaryContainer.withValues(alpha: 0.5);
       textColor = colorScheme.onPrimaryContainer;
       icon = Icons.schedule_rounded;
       label = _formatDate(dueAt);
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: textTheme.labelSmall?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
           ),
-        ],
-      ),
-    )
+          decoration: BoxDecoration(
+            color: badgeColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: textColor),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: textTheme.labelSmall?.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        )
         .animate()
         .fadeIn(duration: 300.ms)
         .scale(

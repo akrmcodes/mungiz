@@ -18,6 +18,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'auth_repository.g.dart';
 
+String? _normalizeDisplayName(String? value) {
+  final normalized = value?.trim();
+  if (normalized == null || normalized.isEmpty) {
+    return null;
+  }
+  return normalized;
+}
+
 /// Provides the [AuthRepository] singleton.
 @Riverpod(keepAlive: true)
 AuthRepository authRepository(Ref ref) {
@@ -33,8 +41,8 @@ class AuthRepository {
   const AuthRepository({
     required SupabaseClient client,
     required AppDatabase db,
-  })  : _client = client,
-        _db = db;
+  }) : _client = client,
+       _db = db;
 
   final SupabaseClient _client;
   final AppDatabase _db;
@@ -71,8 +79,7 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final response =
-        await _client.auth.signInWithPassword(
+    final response = await _client.auth.signInWithPassword(
       email: email,
       password: password,
     );
@@ -94,9 +101,7 @@ class AuthRepository {
 
     // Clear cached profile from Drift.
     if (userId != null) {
-      await (_db.delete(_db.profiles)
-            ..where((p) => p.id.equals(userId)))
-          .go();
+      await (_db.delete(_db.profiles)..where((p) => p.id.equals(userId))).go();
     }
   }
 
@@ -119,12 +124,14 @@ class AuthRepository {
 
       if (data == null) return;
 
-      await _db.into(_db.profiles).insertOnConflictUpdate(
+      await _db
+          .into(_db.profiles)
+          .insertOnConflictUpdate(
             ProfilesCompanion(
               id: Value(data['id'] as String),
               email: Value(data['email'] as String),
               displayName: Value(
-                data['display_name'] as String?,
+                _normalizeDisplayName(data['display_name'] as String?),
               ),
               avatarUrl: Value(
                 data['avatar_url'] as String?,

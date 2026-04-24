@@ -5,7 +5,8 @@
 ///   - Root navigator: hosts full-screen modal routes (login, register,
 ///     createTask) that render OVER the shell.
 ///   - StatefulShellRoute (indexedStack): hosts Branch 0 (Tasks) and
-///     Branch 1 (Dashboard) with state preserved across tab switches.
+///     Branch 1 (Dashboard) and Branch 2 (Profile) with state preserved
+///     across tab switches.
 ///
 /// The modal routes use the root navigator key so they cover the shell.
 library;
@@ -16,6 +17,7 @@ import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/providers/supabase_providers.dart';
 import 'package:mungiz/features/auth/presentation/login_screen.dart';
 import 'package:mungiz/features/auth/presentation/register_screen.dart';
+import 'package:mungiz/features/auth/presentation/screens/profile_screen.dart';
 import 'package:mungiz/features/core/presentation/scaffold_with_nav_bar.dart';
 import 'package:mungiz/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:mungiz/features/tasks/presentation/screens/create_task_screen.dart';
@@ -43,6 +45,7 @@ GoRouter appRouter(Ref ref) {
   final rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
   final tasksKey = GlobalKey<NavigatorState>(debugLabel: 'tasks');
   final dashboardKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard');
+  final profileKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
   final routerRefreshNotifier = _RouterRefreshNotifier();
 
   ref
@@ -126,6 +129,18 @@ GoRouter appRouter(Ref ref) {
                 path: RoutePaths.dashboard,
                 name: 'dashboard',
                 builder: (context, state) => const DashboardScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 2 — Profile (path = '/profile')
+          StatefulShellBranch(
+            navigatorKey: profileKey,
+            routes: [
+              GoRoute(
+                path: RoutePaths.profile,
+                name: 'profile',
+                builder: (context, state) => const ProfileScreen(),
               ),
             ],
           ),

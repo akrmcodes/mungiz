@@ -96,6 +96,14 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
     final showCompleted = ref.watch(showCompletedProvider);
     final currentUserId = ref.read(authRepositoryProvider).currentUser?.id;
 
+    ref.listen(currentUserProfileProvider, (previous, next) {
+      if (!mounted || _profileCache.isEmpty) {
+        return;
+      }
+
+      setState(_profileCache.clear);
+    });
+
     return Scaffold(
       // ── App Bar ──────────────────────────────────────────
       appBar: AppBar(
