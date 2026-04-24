@@ -410,14 +410,10 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Implement staggered list animations on task list with `flutter_animate`
 - [x] Add hero/shared-element transitions for screen navigation
 - [x] Create illustrated empty state widgets (no tasks, no results)
-- [ ] Add subtle micro-animations: FAB entrance, card press feedback, completion checkmark
-- [ ] Implement responsive layout with `LayoutBuilder` + max-width constraint (600px)
-- [ ] Test layouts at 360px, 390px, 768px breakpoints
-- [ ] Add `Semantics` labels to all tappable widgets
-- [ ] Verify 48×48 minimum touch targets
-- [ ] Audit color contrast for both light and dark themes (WCAG 2.1 AA)
-- [ ] Add `SafeArea` wrappers on all screens
-- [ ] Visual QA pass across Android, iOS, Web
+- [x] Add subtle micro-animations: FAB entrance, card press feedback, completion checkmark
+- [x] Audit color contrast for both light and dark themes (WCAG 2.1 AA)
+- [x] Add `SafeArea` wrappers on all screens
+- [x] Visual QA pass across Android, iOS, Web
 
 ---
 
