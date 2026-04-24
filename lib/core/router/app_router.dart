@@ -1,8 +1,13 @@
-/// GoRouter configuration with authentication guard.
+/// GoRouter configuration with authentication guard and
+/// StatefulShellRoute for tab-based navigation.
 ///
-/// Routes are defined declaratively. An auth redirect guard forces
-/// unauthenticated users to `/login` and prevents authenticated
-/// users from accessing the login/register screens.
+/// Architecture:
+///   - Root navigator: hosts full-screen modal routes (login, register,
+///     createTask) that render OVER the shell.
+///   - StatefulShellRoute (indexedStack): hosts Branch 0 (Tasks) and
+///     Branch 1 (Dashboard) with state preserved across tab switches.
+///
+/// The modal routes use the root navigator key so they cover the shell.
 library;
 
 import 'package:flutter/material.dart';
@@ -11,6 +16,8 @@ import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/providers/supabase_providers.dart';
 import 'package:mungiz/features/auth/presentation/login_screen.dart';
 import 'package:mungiz/features/auth/presentation/register_screen.dart';
+import 'package:mungiz/features/core/presentation/scaffold_with_nav_bar.dart';
+import 'package:mungiz/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:mungiz/features/tasks/presentation/screens/create_task_screen.dart';
 import 'package:mungiz/features/tasks/presentation/screens/task_list_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -18,122 +25,115 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'app_router.g.dart';
 
-/// Provides the [GoRouter] instance, rebuilding when auth state
-/// changes.
+// ── Provider ──────────────────────────────────────────────────────────────
+
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() {
+    notifyListeners();
+  }
+}
+
+/// Provides the singleton [GoRouter] instance and refreshes redirects when
+/// auth state changes.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
-  // Listen to auth state changes so the router
-  // re-evaluates redirects on sign-in / sign-out.
-  ref.watch(authStateChangesProvider);
+  // Each router instance must own its navigator keys. The router is rebuilt
+  // when auth changes, so sharing global keys across instances can produce
+  // duplicate-key collisions while the old router is still tearing down.
+  final rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+  final tasksKey = GlobalKey<NavigatorState>(debugLabel: 'tasks');
+  final dashboardKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard');
+  final routerRefreshNotifier = _RouterRefreshNotifier();
 
-  return GoRouter(
+  ref
+    ..listen(authStateChangesProvider, (
+      previousState,
+      nextState,
+    ) {
+      routerRefreshNotifier.refresh();
+    })
+    ..onDispose(routerRefreshNotifier.dispose);
+
+  final router = GoRouter(
+    navigatorKey: rootKey,
     initialLocation: RoutePaths.home,
     debugLogDiagnostics: true,
+    refreshListenable: routerRefreshNotifier,
 
-    // ── Redirect (Auth Guard) ──────────────────────────
+    // ── Auth redirect guard ───────────────────────────────────────
     redirect: (context, state) {
-      final session =
-          Supabase.instance.client.auth.currentSession;
+      final session = Supabase.instance.client.auth.currentSession;
       final isAuthenticated = session != null;
-      final isAuthRoute =
-          state.matchedLocation == RoutePaths.login ||
-              state.matchedLocation == RoutePaths.register;
+      final loc = state.matchedLocation;
+      final isAuthRoute = loc == RoutePaths.login || loc == RoutePaths.register;
 
-      // Not logged in → force to login.
       if (!isAuthenticated && !isAuthRoute) {
         return RoutePaths.login;
       }
-
-      // Already logged in → prevent auth screens.
       if (isAuthenticated && isAuthRoute) {
         return RoutePaths.home;
       }
-
-      // No redirect needed.
       return null;
     },
 
-    // ── Routes ─────────────────────────────────────────
+    // ── Routes ───────────────────────────────────────────────────
     routes: [
+      // ── Auth routes (full-screen, above shell) ─────────────────
       GoRoute(
-        path: RoutePaths.home,
-        name: 'home',
-        builder: (context, state) =>
-            const TaskListScreen(),
-      ),
-      GoRoute(
+        parentNavigatorKey: rootKey,
         path: RoutePaths.login,
         name: 'login',
-        builder: (context, state) =>
-            const LoginScreen(),
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
+        parentNavigatorKey: rootKey,
         path: RoutePaths.register,
         name: 'register',
-        builder: (context, state) =>
-            const RegisterScreen(),
+        builder: (context, state) => const RegisterScreen(),
       ),
+
+      // ── Create Task (above shell — covers the nav bar) ─────────
       GoRoute(
+        parentNavigatorKey: rootKey,
         path: RoutePaths.createTask,
         name: 'createTask',
-        builder: (context, state) =>
-            const CreateTaskScreen(),
+        builder: (context, state) => const CreateTaskScreen(),
       ),
-      GoRoute(
-        path: RoutePaths.dashboard,
-        name: 'dashboard',
-        builder: (context, state) =>
-            const _PlaceholderScreen(
-          title: 'لوحة المتابعة',
+
+      // ── Shell: Tab navigation ───────────────────────────────────
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => ScaffoldWithNavBar(
+          navigationShell: navigationShell,
         ),
+        branches: [
+          // Branch 0 — Tasks (initial tab, path = '/')
+          StatefulShellBranch(
+            navigatorKey: tasksKey,
+            routes: [
+              GoRoute(
+                path: RoutePaths.home,
+                name: 'home',
+                builder: (context, state) => const TaskListScreen(),
+              ),
+            ],
+          ),
+
+          // Branch 1 — Dashboard (path = '/dashboard')
+          StatefulShellBranch(
+            navigatorKey: dashboardKey,
+            routes: [
+              GoRoute(
+                path: RoutePaths.dashboard,
+                name: 'dashboard',
+                builder: (context, state) => const DashboardScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );
-}
 
-// ───────────────────────────────────────────────────────────
-// Placeholder screen — replaced as features are implemented
-// ───────────────────────────────────────────────────────────
-
-/// Temporary placeholder for routes not yet implemented.
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.construction_rounded,
-              size: 64,
-              color: colorScheme.primary.withValues(
-                alpha: 0.6,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: theme.textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'قيد التطوير',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  ref.onDispose(router.dispose);
+  return router;
 }

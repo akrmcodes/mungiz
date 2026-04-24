@@ -333,21 +333,24 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Add `fl_chart` dependency
-- [ ] Create `features/dashboard/` feature directory
-- [ ] Create `features/dashboard/data/dashboard_repository.dart`: queries against Drift for aggregated stats (counts, rates, groupings)
-- [ ] Create `features/dashboard/domain/task_stats.dart`: Freezed model for stats (totalTasks, completed, pending, overdueCount, completionRate)
-- [ ] Create dashboard Riverpod provider: watches Drift and computes stats reactively
-- [ ] Create `features/dashboard/presentation/dashboard_screen.dart`:
-  - [ ] Summary cards row: Total, Completed, Pending, Overdue — each with animated counter
-  - [ ] Animated circular progress ring showing completion rate percentage
-  - [ ] Bar chart: tasks completed per day (last 7 days) via `fl_chart`
-  - [ ] Pie/donut chart: task distribution by status
-- [ ] Create `features/dashboard/presentation/widgets/stat_card.dart`: reusable animated stat card
-- [ ] Create `features/dashboard/presentation/widgets/progress_ring.dart`: animated circular progress
-- [ ] Add dashboard to main navigation (bottom nav tab or drawer entry)
-- [ ] Update GoRouter with `/dashboard` route
-- [ ] Verify: stats update reactively as tasks are created/completed
+- [x] Add `fl_chart` dependency
+- [x] Create `features/dashboard/` feature directory
+- [x] Create `features/dashboard/data/dashboard_repository.dart`: queries against Drift for aggregated stats (counts, rates, groupings)
+- [x] Create `features/dashboard/domain/task_stats.dart`: Freezed model for stats (totalTasks, completed, pending, overdueCount, completionRate, weeklyCompletions)
+- [x] Create dashboard Riverpod provider: watches Drift and computes stats reactively
+- [x] Create `features/dashboard/presentation/dashboard_screen.dart`:
+  - [x] Summary cards row: Total, Completed, Pending, Overdue — each with animated counter
+  - [x] Animated circular progress ring showing completion rate percentage
+  - [x] Bar chart: tasks completed per day (last 7 days) via `fl_chart`
+  - [x] Pie/donut chart: task distribution by status
+- [x] Create `features/dashboard/presentation/widgets/stat_card.dart`: reusable animated stat card
+- [x] Create `features/dashboard/presentation/widgets/progress_ring.dart`: animated circular progress
+- [x] Create `features/dashboard/presentation/widgets/weekly_bar_chart.dart`: gradient bar chart with Arabic day labels
+- [x] Create `features/dashboard/presentation/widgets/status_donut_chart.dart`: interactive donut chart with glowing legend
+- [x] Create `features/core/presentation/scaffold_with_nav_bar.dart`: M3 NavigationBar shell
+- [x] Add dashboard to main navigation (bottom nav tab — `StatefulShellRoute.indexedStack`)
+- [x] Update GoRouter with `/dashboard` route via `StatefulShellRoute`
+- [x] Verify: stats update reactively as tasks are created/completed
 
 ---
 

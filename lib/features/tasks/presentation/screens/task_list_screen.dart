@@ -11,6 +11,7 @@
 library;
 
 import 'dart:async';
+import 'dart:developer' as dev;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -222,11 +223,25 @@ class _TaskListScreenState
                 );
               },
               loading: () => const _ShimmerList(),
-              error: (error, _) => _ErrorState(
-                error: error,
-                onRetry: () =>
-                    ref.invalidate(taskListProvider),
-              ),
+              error: (error, stack) {
+                // ── EXTREME OBSERVABILITY ──────────────────────
+                // Log the full stack trace to the console so the
+                // developer can read it and diagnose the root cause
+                // without needing to attach a debugger.
+                dev.log(
+                  '[TaskListScreen] ERROR in taskListProvider!',
+                  name: 'TaskListScreen',
+                  error: error,
+                  stackTrace: stack,
+                  level: 1000, // severe
+                );
+                return _ErrorState(
+                  error: error,
+                  stack: stack,
+                  onRetry: () =>
+                      ref.invalidate(taskListProvider),
+                );
+              },
             ),
           ),
         ],
@@ -419,63 +434,104 @@ class _ShimmerList extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Error state
+// Error state — EXTREME OBSERVABILITY
 // ─────────────────────────────────────────────────────────────────────────
 
+/// A deliberately loud, impossible-to-miss error widget.
+///
+/// Uses a full red background with white text so any crash in
+/// [taskListProvider] is immediately visible without a debugger.
+/// The full [stack] trace is rendered on screen and also logged
+/// to the console via `dart:developer`.
 class _ErrorState extends StatelessWidget {
   const _ErrorState({
     required this.error,
+    required this.stack,
     required this.onRetry,
   });
 
   final Object error;
+  final StackTrace stack;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    return ColoredBox(
+      color: const Color(0xFFB00020), // blazing red
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Header ───────────────────────────────────────
+              const Row(
+                children: [
+                  Icon(
+                    Icons.bug_report_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '🚨 TASK LIST PROVIDER ERROR',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(
-          AppSpacing.screenPaddingH,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 56,
-              color: colorScheme.error,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'حدث خطأ أثناء تحميل المهام',
-              textAlign: TextAlign.center,
-              style:
-                  theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
+              const SizedBox(height: 16),
+
+              // ── Error message ────────────────────────────────
+              Text(
+                error.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              '$error',
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style:
-                  theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+
+              const SizedBox(height: 12),
+
+              // ── Stack trace (scrollable) ─────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Text(
+                    stack.toString(),
+                    style: const TextStyle(
+                      color: Color(0xFFFFCDD2),
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('إعادة المحاولة'),
-            ),
-          ],
+
+              const SizedBox(height: 16),
+
+              // ── Retry button ─────────────────────────────────
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFB00020),
+                ),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text(
+                  'إعادة المحاولة',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
