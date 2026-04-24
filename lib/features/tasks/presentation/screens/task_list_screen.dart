@@ -17,7 +17,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
-import 'package:mungiz/core/database/app_database.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
 import 'package:mungiz/features/auth/data/auth_repository.dart';
 import 'package:mungiz/features/auth/data/profile_repository.dart';
@@ -38,36 +37,37 @@ class TaskListScreen extends ConsumerStatefulWidget {
 
 class _TaskListScreenState
     extends ConsumerState<TaskListScreen> {
-  /// Local cache of profile entries keyed by user ID.
+  /// Local cache of resolved display names keyed by user ID.
   ///
-  /// Populated lazily as tasks are rendered. This avoids
-  /// extra database queries after the first lookup.
-  final Map<String, ProfileEntry?> _profileCache = {};
+  /// Populated lazily as tasks are rendered. Stores the final resolved
+  /// string (displayName ?? email) so repeated renders are instant.
+  /// A `null` value means the lookup ran but found nothing.
+  final Map<String, String?> _profileCache = {};
 
   /// Resolves a display name for a user ID.
   ///
-  /// Returns the display name or email from the local Drift
-  /// cache. Falls back to `null` if not cached yet, triggering
-  /// a lazy lookup.
+  /// Returns immediately from the in-memory cache on repeat calls.
+  /// On the first call for a given [userId], returns `null` and fires
+  /// an async lookup via [ProfileRepository.resolveProfile], which
+  /// tries local Drift first then Supabase. When the lookup completes,
+  /// [setState] triggers a rebuild with the real name.
   String? _resolveProfileName(String userId) {
     if (_profileCache.containsKey(userId)) {
-      final entry = _profileCache[userId];
-      if (entry == null) return null;
-      return entry.displayName ?? entry.email;
+      return _profileCache[userId];
     }
 
-    // Trigger async lookup and cache the result.
+    // Trigger async lookup; return null for this render cycle.
     unawaited(_lookupProfile(userId));
     return null;
   }
 
   Future<void> _lookupProfile(String userId) async {
-    final profile = await ref
+    final name = await ref
         .read(profileRepositoryProvider)
-        .getCachedProfile(userId);
+        .resolveProfile(userId);
     if (mounted) {
       setState(() {
-        _profileCache[userId] = profile;
+        _profileCache[userId] = name;
       });
     }
   }

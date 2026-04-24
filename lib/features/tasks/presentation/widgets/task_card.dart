@@ -289,21 +289,41 @@ class _TaskCardState extends State<TaskCard>
                       ],
 
                       // ── Assignment badge ──────────
+                      // Only renders once the name has resolved from the
+                      // profile repository. While resolveProfile() is
+                      // in-flight the badge is hidden (SizedBox.shrink),
+                      // then animates in via fadeIn+scale once setState fires
+                      // with the real email/display-name string.
                       if (assignment !=
                           _AssignmentType.personal) ...[
-                        const SizedBox(
-                          height: AppSpacing.sm,
-                        ),
-                        _AssignmentBadge(
-                          type: assignment,
-                          name: assignment ==
-                                  _AssignmentType
-                                      .assignedToOther
-                              ? widget.assigneeName
-                              : widget.creatorName,
-                          colorScheme: colorScheme,
-                          textTheme: theme.textTheme,
-                          isDark: isDark,
+                        Builder(
+                          builder: (_) {
+                            final resolvedName =
+                                assignment ==
+                                        _AssignmentType
+                                            .assignedToOther
+                                    ? widget.assigneeName
+                                    : widget.creatorName;
+                            if (resolvedName == null) {
+                              return const SizedBox.shrink();
+                            }
+                            return Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(
+                                  height: AppSpacing.sm,
+                                ),
+                                _AssignmentBadge(
+                                  type: assignment,
+                                  name: resolvedName,
+                                  colorScheme: colorScheme,
+                                  textTheme: theme.textTheme,
+                                  isDark: isDark,
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ],
@@ -347,7 +367,7 @@ class _AssignmentBadge extends StatelessWidget {
   });
 
   final _AssignmentType type;
-  final String? name;
+  final String name;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final bool isDark;
@@ -372,10 +392,14 @@ class _AssignmentBadge extends StatelessWidget {
         : Icons.arrow_forward_rounded;
 
     final label = isToOther
-        ? 'مُسندة إلى: ${name ?? '...'}'
-        : 'بواسطة: ${name ?? '...'}';
+        ? 'مُسندة إلى: $name'
+        : 'بواسطة: $name';
+
 
     return Container(
+      // Let the badge grow to fill available width so the label
+      // always has the full card width to render into.
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm + 2,
         vertical: AppSpacing.xs + 2,
@@ -390,19 +414,23 @@ class _AssignmentBadge extends StatelessWidget {
               .withValues(alpha: 0.2),
         ),
       ),
-      child: Row(
+      // Wrap keeps icon + label on one line when there is room,
+      // and wraps the label to the next line for long email addresses.
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 2,
         children: [
           Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              label,
-              style: textTheme.labelSmall?.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
-              ),
+          Text(
+            label,
+            style: textTheme.labelSmall?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w600,
+              height: 1.3,
             ),
+            // No maxLines / no overflow — let the text wrap freely.
+            softWrap: true,
           ),
         ],
       ),

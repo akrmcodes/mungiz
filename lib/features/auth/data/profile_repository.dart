@@ -1,10 +1,13 @@
 /// Profile repository — user lookup and local caching.
 ///
-/// Provides two primary operations:
+/// Provides three primary operations:
 ///   - `findUserByEmail`: Queries Supabase `profiles` by email and caches
 ///     the result in the local Drift database. Requires connectivity.
 ///   - `getCachedProfile`: Reads a profile from the local Drift database
 ///     without any network calls.
+///   - `resolveProfile`: Local-first lookup by UUID; falls back to Supabase
+///     when the row is absent, caches the result, and always returns a
+///     displayable string (email or display name).
 ///
 /// Exceptions thrown by `findUserByEmail`:
 ///   - `UserNotFoundException` — no matching email in Supabase.
@@ -155,5 +158,62 @@ class ProfileRepository {
     return (_db.select(_db.profiles)
           ..where((p) => p.id.equals(userId)))
         .getSingleOrNull();
+  }
+
+  // ── Resolve (local-first, remote fallback) ────────────────────────────
+
+  /// Resolves the best available display string for [userId].
+  ///
+  /// Strategy:
+  ///   1. Check the local Drift `profiles` table.
+  ///   2. If absent, query Supabase by UUID and cache the result locally.
+  ///   3. Return `displayName ?? email`, or `null` if both lookups fail.
+  ///
+  /// Unlike [getCachedProfile] this method **will** make a network call
+  /// when the local row is missing. Callers should handle errors gracefully.
+  Future<String?> resolveProfile(String userId) async {
+    // 1 — Local hit.
+    final cached = await getCachedProfile(userId);
+    if (cached != null) {
+      return cached.displayName ?? cached.email;
+    }
+
+    // 2 — Remote fallback: query Supabase by the auth UUID.
+    try {
+      final data = await _client
+          .from(SupabaseTables.profiles)
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (data == null) return null;
+
+      // Cache so future calls are instant.
+      await _db.into(_db.profiles).insertOnConflictUpdate(
+            ProfilesCompanion(
+              id: Value(data['id'] as String),
+              email: Value(data['email'] as String),
+              displayName: Value(data['display_name'] as String?),
+              avatarUrl: Value(data['avatar_url'] as String?),
+            ),
+          );
+
+      log(
+        'Profile resolved from remote for $userId',
+        name: 'ProfileRepository',
+      );
+
+      final displayName = data['display_name'] as String?;
+      final email = data['email'] as String;
+      return displayName ?? email;
+    } on Object catch (e, st) {
+      log(
+        'resolveProfile failed for $userId',
+        name: 'ProfileRepository',
+        error: e,
+        stackTrace: st,
+      );
+      return null;
+    }
   }
 }
