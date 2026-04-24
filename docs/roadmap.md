@@ -95,21 +95,21 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create Supabase project (development environment)
-- [ ] Create `profiles` table per plan.md §3.3 (id, email, display_name, avatar_url, created_at, updated_at)
-- [ ] Create `tasks` table per plan.md §3.3 (id, title, description, is_completed, due_at, created_by, assigned_to, created_at, updated_at)
-- [ ] Set up foreign key constraints on both tables
-- [ ] Enable RLS on `profiles` and `tasks` tables with all four policies per plan.md §3.3
-- [ ] Create DB trigger to auto-insert `profiles` on `auth.users` INSERT
-- [ ] Create `updated_at` auto-update trigger
-- [ ] Enable Supabase Auth (email/password)
-- [ ] Record Supabase URL and anon key in `.env`
-- [ ] Create `core/database/app_database.dart`: Drift database class with `tasks` and `profiles` tables mirroring Supabase schema
-- [ ] Add `sync_status` column to Drift `tasks` table (enum: synced, pending_create, pending_update, pending_delete)
-- [ ] Create `sync_queue` Drift table: (id, table_name, record_id, operation, payload, created_at)
-- [ ] Run `build_runner` for Drift codegen
-- [ ] Verify Drift DB opens and migrates correctly on app launch
-- [ ] Verify Supabase tables and RLS via SQL editor test queries
+- [x] Create Supabase project (development environment)
+- [x] Create `profiles` table per plan.md §3.3 (id, email, display_name, avatar_url, created_at, updated_at)
+- [x] Create `tasks` table per plan.md §3.3 (id, title, description, is_completed, due_at, created_by, assigned_to, created_at, updated_at)
+- [x] Set up foreign key constraints on both tables
+- [x] Enable RLS on `profiles` and `tasks` tables with all four policies per plan.md §3.3
+- [x] Create DB trigger to auto-insert `profiles` on `auth.users` INSERT
+- [x] Create `updated_at` auto-update trigger
+- [x] Enable Supabase Auth (email/password)
+- [x] Record Supabase URL and anon key in `.env`
+- [x] Create `core/database/app_database.dart`: Drift database class with `tasks` and `profiles` tables mirroring Supabase schema
+- [x] Add `sync_status` column to Drift `tasks` table (enum: synced, pending_create, pending_update, pending_delete)
+- [x] Create `sync_queue` Drift table: (id, table_name, record_id, operation, payload, created_at)
+- [x] Run `build_runner` for Drift codegen
+- [x] Verify Drift DB opens and migrates correctly on app launch
+- [x] Verify Supabase tables and RLS via SQL editor test queries
 
 ---
 
@@ -128,18 +128,18 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `main.dart`: init Supabase + Drift, run app in `ProviderScope`
-- [ ] Create `app.dart`: `MaterialApp.router` with GoRouter and theme
-- [ ] Create `core/theme/app_theme.dart`: Material 3 `ThemeData`, light + dark, `ColorScheme.fromSeed()`
-- [ ] Create `core/theme/app_typography.dart`: Google Fonts text theme
-- [ ] Create `core/theme/app_spacing.dart`: spacing constants
-- [ ] Create `core/providers/supabase_providers.dart`: providers for `SupabaseClient` and `authStateChanges`
-- [ ] Create `core/providers/database_providers.dart`: provider for `AppDatabase` (Drift)
-- [ ] Create `core/providers/connectivity_provider.dart`: provider wrapping `connectivity_plus`
-- [ ] Create `core/router/app_router.dart`: GoRouter with placeholder routes + auth guard
-- [ ] Create `core/constants/app_constants.dart`: route paths as `const` strings
-- [ ] Run `build_runner`
-- [ ] Verify app launches on Android, iOS, Web with themed shell
+- [x] Create `main.dart`: init Supabase + Drift, run app in `ProviderScope`
+- [x] Create `app.dart`: `MaterialApp.router` with GoRouter and theme
+- [x] Create `core/theme/app_theme.dart`: Material 3 `ThemeData`, light + dark, `ColorScheme.fromSeed()`
+- [x] Create `core/theme/app_typography.dart`: Google Fonts text theme
+- [x] Create `core/theme/app_spacing.dart`: spacing constants
+- [x] Create `core/providers/supabase_providers.dart`: providers for `SupabaseClient` and `authStateChanges`
+- [x] Create `core/providers/database_providers.dart`: provider for `AppDatabase` (Drift)
+- [x] Create `core/providers/connectivity_provider.dart`: provider wrapping `connectivity_plus`
+- [x] Create `core/router/app_router.dart`: GoRouter with placeholder routes + auth guard
+- [x] Create `core/constants/app_constants.dart`: route paths as `const` strings
+- [x] Run `build_runner`
+- [x] Verify app launches on Android, iOS, Web with themed shell
 
 ---
 
@@ -157,19 +157,19 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/auth/domain/user_profile.dart`: Freezed model matching `profiles` table
-- [ ] Run `build_runner` for Freezed codegen
-- [ ] Create `features/auth/data/auth_repository.dart`:
+- [x] Create `features/auth/domain/user_profile.dart`: Freezed model matching `profiles` table
+- [x] Run `build_runner` for Freezed codegen
+- [x] Create `features/auth/data/auth_repository.dart`:
   - `signUp(email, password)` — register + cache profile to Drift
   - `signIn(email, password)` — login + cache profile to Drift
   - `signOut()` — terminate session, clear sensitive local data
   - `currentUser` / `authStateChanges` — stream of auth state
-- [ ] Create auth Riverpod providers/notifiers (`authStateProvider`, `authNotifierProvider`)
-- [ ] Create `features/auth/presentation/login_screen.dart`: email/password fields, validation, loading state, link to register, error display
-- [ ] Create `features/auth/presentation/register_screen.dart`: email/password/confirm fields, validation, loading state, link to login, error display
-- [ ] Update GoRouter: add `/login`, `/register` routes with auth redirect guard
-- [ ] Verify: register → auto-login → home → logout → redirect to login
-- [ ] Verify: profile row auto-created in Supabase and cached in Drift
+- [x] Create auth Riverpod providers/notifiers (`authStateProvider`, `authNotifierProvider`)
+- [x] Create `features/auth/presentation/login_screen.dart`: email/password fields, validation, loading state, link to register, error display
+- [x] Create `features/auth/presentation/register_screen.dart`: email/password/confirm fields, validation, loading state, link to login, error display
+- [x] Update GoRouter: add `/login`, `/register` routes with auth redirect guard
+- [x] Verify: register → auto-login → home → logout → redirect to login
+- [x] Verify: profile row auto-created in Supabase and cached in Drift
 
 ---
 
@@ -188,24 +188,24 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/tasks/domain/task.dart`: Freezed model with `@JsonKey` for snake_case
-- [ ] Run `build_runner`
-- [ ] Create `features/tasks/data/task_local_repository.dart` (Drift):
+- [x] Create `features/tasks/domain/task.dart`: Freezed model with `@JsonKey` for snake_case
+- [x] Run `build_runner`
+- [x] Create `features/tasks/data/task_local_repository.dart` (Drift):
   - `watchTasks()` — reactive stream of tasks from local DB
   - `insertTask(task)` — insert with `sync_status: pending_create`
   - `toggleComplete(taskId, isCompleted)` — update locally, mark `sync_status: pending_update`
   - `getTaskById(id)` — single task lookup
-- [ ] Create `features/tasks/data/task_remote_repository.dart` (Supabase):
+- [x] Create `features/tasks/data/task_remote_repository.dart` (Supabase):
   - `fetchAllTasks()` — pull all user tasks from Supabase (used by sync)
   - `pushTask(task)` — upsert to Supabase
   - `pushCompletion(taskId, isCompleted)` — update remote
-- [ ] Create task Riverpod notifiers: `taskListNotifierProvider` watching Drift, methods for `addTask()`, `toggleComplete()`
-- [ ] Create `features/tasks/presentation/widgets/task_card.dart`: task display with completion toggle
-- [ ] Create `features/tasks/presentation/widgets/empty_tasks.dart`: illustrated empty state with CTA
-- [ ] Create `features/tasks/presentation/screens/task_list_screen.dart`: displays tasks via Drift watch, toggle for completed, FAB for create, handles loading/error/empty/data
-- [ ] Create `features/tasks/presentation/screens/create_task_screen.dart`: title (required), description (optional), due date picker (optional), submit with validation
-- [ ] Update GoRouter: `/`, `/tasks/create`
-- [ ] Verify: create task → instant local display → mark complete → hidden → toggle to reveal
+- [x] Create task Riverpod notifiers: `taskListNotifierProvider` watching Drift, methods for `addTask()`, `toggleComplete()`
+- [x] Create `features/tasks/presentation/widgets/task_card.dart`: task display with completion toggle
+- [x] Create `features/tasks/presentation/widgets/empty_tasks.dart`: illustrated empty state with CTA
+- [x] Create `features/tasks/presentation/screens/task_list_screen.dart`: displays tasks via Drift watch, toggle for completed, FAB for create, handles loading/error/empty/data
+- [x] Create `features/tasks/presentation/screens/create_task_screen.dart`: title (required), description (optional), due date picker (optional), submit with validation
+- [x] Update GoRouter: `/`, `/tasks/create`
+- [x] Verify: create task → instant local display → mark complete → hidden → toggle to reveal
 
 ---
 
@@ -224,15 +224,15 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/auth/data/profile_repository.dart`:
+- [x] Create `features/auth/data/profile_repository.dart`:
   - `findUserByEmail(email)` — query Supabase `profiles`, cache in Drift
   - `getCachedProfile(userId)` — lookup from Drift
-- [ ] Update `task_local_repository.dart`: `insertAssignedTask(task)` with distinct `created_by`/`assigned_to`
-- [ ] Update `task_remote_repository.dart`: handle assigned task push
-- [ ] Update `CreateTaskScreen`: optional "Assign to" email field, validate user exists, error if not found
-- [ ] Update `TaskCard`: show assignment indicator when creator ≠ assignee
-- [ ] Update task notifier to handle assigned tasks
-- [ ] Verify: User A assigns to User B → syncs → User B sees it → RLS enforced
+- [x] Update `task_local_repository.dart`: `insertAssignedTask(task)` with distinct `created_by`/`assigned_to`
+- [x] Update `task_remote_repository.dart`: handle assigned task push
+- [x] Update `CreateTaskScreen`: optional "Assign to" email field, validate user exists, error if not found
+- [x] Update `TaskCard`: show assignment indicator when creator ≠ assignee
+- [x] Update task notifier to handle assigned tasks
+- [x] Verify: User A assigns to User B → syncs → User B sees it → RLS enforced
 
 ---
 
@@ -251,21 +251,21 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/sync/data/sync_engine.dart`:
+- [x] Create `features/sync/data/sync_engine.dart`:
   - `pushPendingChanges()` — iterate pending items, push to Supabase, update `sync_status`
   - `pullRemoteChanges()` — fetch from Supabase, upsert into Drift
   - `fullSync()` — push then pull
   - Error handling: retry logic with exponential backoff for transient failures
-- [ ] Create `features/sync/data/conflict_resolver.dart`: last-write-wins strategy using `updated_at`
-- [ ] Create sync Riverpod provider:
+- [x] Create `features/sync/data/conflict_resolver.dart`: last-write-wins strategy using `updated_at`
+- [x] Create sync Riverpod provider:
   - Watch connectivity state
   - Trigger `fullSync()` on connectivity restored
   - Periodic sync when online (configurable interval)
   - Expose sync status (`idle`, `syncing`, `error`, `offline`)
-- [ ] Create sync status UI indicator widget (app bar badge/icon)
-- [ ] Handle edge cases: partial sync failure (retry individual items), duplicate prevention
-- [ ] Verify: go offline → create/complete tasks → restore connection → data syncs → visible on another device
-- [ ] Verify: conflict scenario → server data correctly reconciled
+- [x] Create sync status UI indicator widget (app bar badge/icon)
+- [x] Handle edge cases: partial sync failure (retry individual items), duplicate prevention
+- [x] Verify: go offline → create/complete tasks → restore connection → data syncs → visible on another device
+- [x] Verify: conflict scenario → server data correctly reconciled
 
 ---
 
