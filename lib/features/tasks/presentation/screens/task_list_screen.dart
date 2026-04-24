@@ -6,32 +6,90 @@
 ///   - Staggered list animations with `flutter_animate`.
 ///   - Animated toggle chip for showing/hiding completed tasks.
 ///   - Premium animated FAB for task creation.
+///   - Assignment badges on task cards (assigned-to / assigned-by).
 ///   - Loading shimmer, error, and empty states.
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
+import 'package:mungiz/core/database/app_database.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
 import 'package:mungiz/features/auth/data/auth_repository.dart';
+import 'package:mungiz/features/auth/data/profile_repository.dart';
 import 'package:mungiz/features/tasks/presentation/providers/task_providers.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/empty_tasks.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/task_card.dart';
 
 /// The main task list screen — the app's default landing screen.
-class TaskListScreen extends ConsumerWidget {
+class TaskListScreen extends ConsumerStatefulWidget {
   /// Creates a [TaskListScreen].
   const TaskListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TaskListScreen> createState() =>
+      _TaskListScreenState();
+}
+
+class _TaskListScreenState
+    extends ConsumerState<TaskListScreen> {
+  /// Local cache of profile entries keyed by user ID.
+  ///
+  /// Populated lazily as tasks are rendered. This avoids
+  /// extra database queries after the first lookup.
+  final Map<String, ProfileEntry?> _profileCache = {};
+
+  /// Resolves a display name for a user ID.
+  ///
+  /// Returns the display name or email from the local Drift
+  /// cache. Falls back to `null` if not cached yet, triggering
+  /// a lazy lookup.
+  String? _resolveProfileName(String userId) {
+    if (_profileCache.containsKey(userId)) {
+      final entry = _profileCache[userId];
+      if (entry == null) return null;
+      return entry.displayName ?? entry.email;
+    }
+
+    // Trigger async lookup and cache the result.
+    unawaited(_lookupProfile(userId));
+    return null;
+  }
+
+  Future<void> _lookupProfile(String userId) async {
+    final profile = await ref
+        .read(profileRepositoryProvider)
+        .getCachedProfile(userId);
+    if (mounted) {
+      setState(() {
+        _profileCache[userId] = profile;
+      });
+    }
+  }
+
+  /// Returns an Arabic greeting based on time of day.
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'صباح الخير ☀️';
+    if (hour < 17) return 'مساء النور 🌤️';
+    return 'مساء الخير 🌙';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final taskAsync = ref.watch(taskListProvider);
     final showCompleted =
         ref.watch(showCompletedProvider);
+    final currentUserId = ref
+        .read(authRepositoryProvider)
+        .currentUser
+        ?.id;
 
     return Scaffold(
       // ── App Bar ──────────────────────────────────────────
@@ -101,8 +159,34 @@ class TaskListScreen extends ConsumerWidget {
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
+
+                    // Resolve profile names for
+                    // assignment badges.
+                    String? assigneeName;
+                    String? creatorName;
+                    if (currentUserId != null) {
+                      if (task.assignedTo !=
+                          currentUserId) {
+                        assigneeName =
+                            _resolveProfileName(
+                          task.assignedTo,
+                        );
+                      }
+                      if (task.createdBy !=
+                          currentUserId) {
+                        creatorName =
+                            _resolveProfileName(
+                          task.createdBy,
+                        );
+                      }
+                    }
+
                     return TaskCard(
                       task: task,
+                      currentUserId:
+                          currentUserId ?? '',
+                      assigneeName: assigneeName,
+                      creatorName: creatorName,
                       onToggleComplete: () => ref
                           .read(
                             taskActionsProvider,
@@ -151,14 +235,6 @@ class TaskListScreen extends ConsumerWidget {
         colorScheme: colorScheme,
       ),
     );
-  }
-
-  /// Returns an Arabic greeting based on time of day.
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'صباح الخير ☀️';
-    if (hour < 17) return 'مساء النور 🌤️';
-    return 'مساء الخير 🌙';
   }
 }
 

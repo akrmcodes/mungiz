@@ -4,6 +4,7 @@
 ///   - Animated completion checkmark with scale + colour transition.
 ///   - Title with animated strikethrough on completion.
 ///   - Colour-coded due date badge (overdue / today / upcoming).
+///   - Assignment indicator badges (assigned-to / assigned-by).
 ///   - Subtle gradient overlay and premium shadow system.
 ///   - `flutter_animate` entrance animations.
 library;
@@ -22,6 +23,9 @@ class TaskCard extends StatefulWidget {
   const TaskCard({
     required this.task,
     required this.onToggleComplete,
+    required this.currentUserId,
+    this.assigneeName,
+    this.creatorName,
     super.key,
   });
 
@@ -30,6 +34,17 @@ class TaskCard extends StatefulWidget {
 
   /// Called when the user taps the completion checkbox.
   final VoidCallback onToggleComplete;
+
+  /// The ID of the currently authenticated user.
+  final String currentUserId;
+
+  /// Display name or email of the user this task is assigned to.
+  /// Used when the task is assigned to someone other than the creator.
+  final String? assigneeName;
+
+  /// Display name or email of the user who created this task.
+  /// Used when the task was assigned to the current user by someone else.
+  final String? creatorName;
 
   @override
   State<TaskCard> createState() => _TaskCardState();
@@ -90,6 +105,20 @@ class _TaskCardState extends State<TaskCard>
     widget.onToggleComplete();
   }
 
+  /// Determines the assignment relationship for this task.
+  _AssignmentType get _assignmentType {
+    final task = widget.task;
+    final uid = widget.currentUserId;
+
+    if (task.createdBy == uid && task.assignedTo != uid) {
+      return _AssignmentType.assignedToOther;
+    }
+    if (task.assignedTo == uid && task.createdBy != uid) {
+      return _AssignmentType.assignedToMe;
+    }
+    return _AssignmentType.personal;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -97,6 +126,7 @@ class _TaskCardState extends State<TaskCard>
     final isDark =
         theme.brightness == Brightness.dark;
     final isCompleted = widget.task.isCompleted;
+    final assignment = _assignmentType;
 
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -257,6 +287,25 @@ class _TaskCardState extends State<TaskCard>
                           textTheme: theme.textTheme,
                         ),
                       ],
+
+                      // ── Assignment badge ──────────
+                      if (assignment !=
+                          _AssignmentType.personal) ...[
+                        const SizedBox(
+                          height: AppSpacing.sm,
+                        ),
+                        _AssignmentBadge(
+                          type: assignment,
+                          name: assignment ==
+                                  _AssignmentType
+                                      .assignedToOther
+                              ? widget.assigneeName
+                              : widget.creatorName,
+                          colorScheme: colorScheme,
+                          textTheme: theme.textTheme,
+                          isDark: isDark,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -266,6 +315,106 @@ class _TaskCardState extends State<TaskCard>
         ),
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Assignment types
+// ─────────────────────────────────────────────────────────────────────────
+
+enum _AssignmentType {
+  /// The task is a personal task (creator == assignee).
+  personal,
+
+  /// The current user created the task and assigned it to someone else.
+  assignedToOther,
+
+  /// Someone else created the task and assigned it to the current user.
+  assignedToMe,
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Assignment badge — glassmorphic chip
+// ─────────────────────────────────────────────────────────────────────────
+
+class _AssignmentBadge extends StatelessWidget {
+  const _AssignmentBadge({
+    required this.type,
+    required this.name,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.isDark,
+  });
+
+  final _AssignmentType type;
+  final String? name;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final isToOther =
+        type == _AssignmentType.assignedToOther;
+
+    final badgeColor = isToOther
+        ? colorScheme.tertiaryContainer
+            .withValues(alpha: isDark ? 0.4 : 0.5)
+        : colorScheme.secondaryContainer
+            .withValues(alpha: isDark ? 0.4 : 0.5);
+
+    final textColor = isToOther
+        ? colorScheme.onTertiaryContainer
+        : colorScheme.onSecondaryContainer;
+
+    final icon = isToOther
+        ? Icons.arrow_back_rounded
+        : Icons.arrow_forward_rounded;
+
+    final label = isToOther
+        ? 'مُسندة إلى: ${name ?? '...'}'
+        : 'بواسطة: ${name ?? '...'}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm + 2,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: (isToOther
+                  ? colorScheme.tertiary
+                  : colorScheme.secondary)
+              .withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .scale(
+          begin: const Offset(0.9, 0.9),
+          duration: 300.ms,
+        );
   }
 }
 

@@ -76,14 +76,20 @@ class TaskLocalRepository {
   ///
   /// The task is created with [SyncStatus.pendingCreate] so the Sync
   /// Engine knows to push it to Supabase.
+  ///
+  /// When [assignedTo] is provided and differs from [userId], the task
+  /// is treated as an assigned task (`created_by` ≠ `assigned_to`).
+  /// Otherwise, the task defaults to a personal task.
   Future<void> insertTask({
     required String title,
     required String userId,
+    String? assignedTo,
     String? description,
     DateTime? dueAt,
   }) async {
     final now = DateTime.now();
     final id = _uuid.v4();
+    final effectiveAssignee = assignedTo ?? userId;
 
     // ── FK safety ─────────────────────────────────────────────────────────
     // The Tasks table has a FOREIGN KEY on createdBy / assignedTo → Profiles(id).
@@ -92,6 +98,9 @@ class TaskLocalRepository {
     // "FOREIGN KEY CONSTRAINT FAILED". We proactively upsert a stub profile
     // row so the constraint is always satisfied.
     await _ensureProfileExists(userId);
+    if (effectiveAssignee != userId) {
+      await _ensureProfileExists(effectiveAssignee);
+    }
 
     await _db.into(_db.tasks).insert(
           TasksCompanion.insert(
@@ -99,7 +108,7 @@ class TaskLocalRepository {
             title: title,
             description: Value(description),
             createdBy: userId,
-            assignedTo: userId,
+            assignedTo: effectiveAssignee,
             dueAt: Value(dueAt),
             syncStatus: const Value(SyncStatus.pendingCreate),
             createdAt: Value(now),

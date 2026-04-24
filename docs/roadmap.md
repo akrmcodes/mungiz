@@ -205,7 +205,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Create `features/tasks/presentation/screens/task_list_screen.dart`: displays tasks via Drift watch, toggle for completed, FAB for create, handles loading/error/empty/data
 - [x] Create `features/tasks/presentation/screens/create_task_screen.dart`: title (required), description (optional), due date picker (optional), submit with validation
 - [x] Update GoRouter: `/`, `/tasks/create`
-- [ ] Verify: create task → instant local display → mark complete → hidden → toggle to reveal
+- [x] Verify: create task → instant local display → mark complete → hidden → toggle to reveal
 
 ---
 
@@ -224,15 +224,15 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `features/auth/data/profile_repository.dart`:
+- [x] Create `features/auth/data/profile_repository.dart`:
   - `findUserByEmail(email)` — query Supabase `profiles`, cache in Drift
   - `getCachedProfile(userId)` — lookup from Drift
-- [ ] Update `task_local_repository.dart`: `insertAssignedTask(task)` with distinct `created_by`/`assigned_to`
-- [ ] Update `task_remote_repository.dart`: handle assigned task push
-- [ ] Update `CreateTaskScreen`: optional "Assign to" email field, validate user exists, error if not found
-- [ ] Update `TaskCard`: show assignment indicator when creator ≠ assignee
-- [ ] Update task notifier to handle assigned tasks
-- [ ] Verify: User A assigns to User B → syncs → User B sees it → RLS enforced
+- [x] Update `task_local_repository.dart`: `insertAssignedTask(task)` with distinct `created_by`/`assigned_to`
+- [x] Update `task_remote_repository.dart`: handle assigned task push
+- [x] Update `CreateTaskScreen`: optional "Assign to" email field, validate user exists, error if not found
+- [x] Update `TaskCard`: show assignment indicator when creator ≠ assignee
+- [x] Update task notifier to handle assigned tasks
+- [x] Verify: User A assigns to User B → syncs → User B sees it → RLS enforced
 
 ---
 

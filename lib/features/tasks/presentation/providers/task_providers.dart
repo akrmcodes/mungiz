@@ -88,13 +88,17 @@ class TaskActionsNotifier {
 
   final TaskLocalRepository _repo;
 
-  /// Creates a new personal task.
+  /// Creates a new task, optionally assigned to another user.
+  ///
+  /// When [assignedTo] is provided, the task is assigned to that user's
+  /// ID. Otherwise, it defaults to a personal task (assigned to self).
   ///
   /// The task is written to Drift with `sync_status: pending_create`.
   Future<void> addTask({
     required String title,
     String? description,
     DateTime? dueAt,
+    String? assignedTo,
   }) async {
     final userId =
         Supabase.instance.client.auth.currentUser?.id;
@@ -103,6 +107,7 @@ class TaskActionsNotifier {
     await _repo.insertTask(
       title: title,
       userId: userId,
+      assignedTo: assignedTo,
       description: description,
       dueAt: dueAt,
     );

@@ -4,6 +4,7 @@
 ///   - Premium floating-label text fields with Arabic placeholders.
 ///   - Multi-line description with character counter.
 ///   - Elegant date picker chip with Arabic locale.
+///   - Optional "assign to" email field with async user lookup.
 ///   - Real-time form validation with Arabic error messages.
 ///   - Animated submit button with loading state.
 ///   - Haptic feedback on successful creation.
@@ -17,6 +18,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
+import 'package:mungiz/features/auth/data/profile_repository.dart';
 import 'package:mungiz/features/tasks/presentation/providers/task_providers.dart';
 
 /// Full-screen form for creating a new task.
@@ -35,10 +37,14 @@ class _CreateTaskScreenState
   final _titleController = TextEditingController();
   final _descriptionController =
       TextEditingController();
+  final _assignEmailController =
+      TextEditingController();
   final _titleFocus = FocusNode();
+  final _assignEmailFocus = FocusNode();
 
   DateTime? _selectedDueDate;
   bool _isSubmitting = false;
+  bool _isLookingUpUser = false;
 
   @override
   void initState() {
@@ -53,7 +59,9 @@ class _CreateTaskScreenState
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _assignEmailController.dispose();
     _titleFocus.dispose();
+    _assignEmailFocus.dispose();
     super.dispose();
   }
 
@@ -63,6 +71,33 @@ class _CreateTaskScreenState
     setState(() => _isSubmitting = true);
 
     try {
+      String? assignedToId;
+
+      // ── Async email lookup ──────────────────────────────────
+      final email =
+          _assignEmailController.text.trim();
+      if (email.isNotEmpty) {
+        setState(() => _isLookingUpUser = true);
+        try {
+          final profile = await ref
+              .read(profileRepositoryProvider)
+              .findUserByEmail(email);
+          assignedToId = profile.id;
+        } on UserNotFoundException catch (e) {
+          if (!mounted) return;
+          _showErrorSnackBar(e.message);
+          return;
+        } on ProfileLookupException catch (e) {
+          if (!mounted) return;
+          _showErrorSnackBar(e.message);
+          return;
+        } finally {
+          if (mounted) {
+            setState(() => _isLookingUpUser = false);
+          }
+        }
+      }
+
       await ref.read(taskActionsProvider).addTask(
             title: _titleController.text.trim(),
             description: _descriptionController
@@ -70,6 +105,7 @@ class _CreateTaskScreenState
                 ? null
                 : _descriptionController.text.trim(),
             dueAt: _selectedDueDate,
+            assignedTo: assignedToId,
           );
 
       if (!mounted) return;
@@ -99,23 +135,59 @@ class _CreateTaskScreenState
         stackTrace: st,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content:
-                  const Text('فشل في إنشاء المهمة'),
-              backgroundColor: Theme.of(context)
-                  .colorScheme
-                  .error,
-            ),
-          );
+        _showErrorSnackBar('فشل في إنشاء المهمة');
       }
     } finally {
       if (mounted) {
-        setState(() => _isSubmitting = false);
+        setState(() {
+          _isSubmitting = false;
+          _isLookingUpUser = false;
+        });
       }
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onError,
+                size: 20,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onError,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor:
+              Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              AppSpacing.inputRadius,
+            ),
+          ),
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screenPaddingH,
+            vertical: AppSpacing.sm,
+          ),
+        ),
+      );
   }
 
   Future<void> _pickDueDate() async {
@@ -175,6 +247,7 @@ class _CreateTaskScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isBusy = _isSubmitting || _isLookingUpUser;
 
     return Scaffold(
       // ── App bar ─────────────────────────────────────────
@@ -334,6 +407,26 @@ class _CreateTaskScreenState
                         delay: 400.ms,
                         duration: 450.ms,
                       ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // ── Assign-to email field ───────
+                  _AssignToField(
+                    controller: _assignEmailController,
+                    focusNode: _assignEmailFocus,
+                    isLoading: _isLookingUpUser,
+                    colorScheme: colorScheme,
+                    theme: theme,
+                  )
+                      .animate()
+                      .fadeIn(
+                        delay: 450.ms,
+                        duration: 450.ms,
+                      )
+                      .slideY(
+                        begin: 0.08,
+                        delay: 450.ms,
+                        duration: 450.ms,
+                      ),
                   const SizedBox(
                     height: AppSpacing.xxl,
                   ),
@@ -342,9 +435,8 @@ class _CreateTaskScreenState
                   SizedBox(
                     height: 56,
                     child: FilledButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : _handleSubmit,
+                      onPressed:
+                          isBusy ? null : _handleSubmit,
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius:
@@ -353,7 +445,7 @@ class _CreateTaskScreenState
                           ),
                         ),
                       ),
-                      child: _isSubmitting
+                      child: isBusy
                           ? SizedBox(
                               height: 22,
                               width: 22,
@@ -406,6 +498,119 @@ class _CreateTaskScreenState
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Assign-to email field
+// ─────────────────────────────────────────────────────────────────────────
+
+class _AssignToField extends StatelessWidget {
+  const _AssignToField({
+    required this.controller,
+    required this.focusNode,
+    required this.isLoading,
+    required this.colorScheme,
+    required this.theme,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool isLoading;
+  final ColorScheme colorScheme;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section label
+        Row(
+          children: [
+            Icon(
+              Icons.person_add_alt_1_rounded,
+              size: 18,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'تعيين المهمة لشخص آخر',
+              style:
+                  theme.textTheme.labelMedium?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          textDirection: TextDirection.ltr,
+          decoration: InputDecoration(
+            labelText:
+                'تعيين إلى (البريد الإلكتروني)',
+            hintText: 'example@email.com',
+            hintTextDirection: TextDirection.ltr,
+            prefixIcon:
+                const Icon(Icons.alternate_email_rounded),
+            suffixIcon: isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  )
+                : controller.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear_rounded,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          controller.clear();
+                          // Force rebuild to hide the
+                          // clear button.
+                          (context as Element)
+                              .markNeedsBuild();
+                        },
+                      )
+                    : null,
+            filled: true,
+            fillColor:
+                colorScheme.surfaceContainerLowest,
+            helperText:
+                'اتركه فارغاً لإنشاء مهمة شخصية',
+            helperStyle:
+                theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant
+                  .withValues(alpha: 0.7),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return null; // Optional field
+            }
+            // Basic email format check.
+            final emailRegex = RegExp(
+              r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+            );
+            if (!emailRegex.hasMatch(value.trim())) {
+              return 'يرجى إدخال بريد إلكتروني صحيح';
+            }
+            return null;
+          },
+        ),
+      ],
     );
   }
 }
