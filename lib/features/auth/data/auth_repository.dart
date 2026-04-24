@@ -6,6 +6,8 @@
 /// `Profiles` table for offline access.
 library;
 
+import 'dart:developer';
+
 import 'package:drift/drift.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/database/app_database.dart';
@@ -129,9 +131,16 @@ class AuthRepository {
               ),
             ),
           );
-    } on Object {
+    } on Object catch (e, st) {
       // Caching failure is non-fatal — the user is still
       // authenticated. The sync engine will retry later.
+      // However, we log it so it's visible in the console.
+      log(
+        '_cacheProfile failed for $userId',
+        name: 'AuthRepository',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 }

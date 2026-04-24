@@ -9,6 +9,8 @@
 ///   - Haptic feedback on successful creation.
 library;
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -89,7 +91,13 @@ class _CreateTaskScreenState
           ),
         );
       context.pop();
-    } on Object {
+    } on Object catch (e, st) {
+      log(
+        'Task Creation Failed',
+        name: 'CreateTaskScreen',
+        error: e,
+        stackTrace: st,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()

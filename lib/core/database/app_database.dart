@@ -186,6 +186,10 @@ class AppDatabase extends _$AppDatabase {
 // =============================================================================
 
 /// Opens a native SQLite connection at the app's documents directory.
+///
+/// `sqlite3_flutter_libs` (v0.5.x) bundles `libsqlite3.so` into the APK via
+/// Gradle so Android can load it. The [LazyDatabase] defers the file-system
+/// lookup until the first query, keeping startup fast.
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbDir = await getApplicationDocumentsDirectory();
