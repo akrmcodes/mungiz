@@ -16,9 +16,11 @@ import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
+import 'package:mungiz/core/theme/widgets/animated_theme_toggle.dart';
 import 'package:mungiz/features/auth/data/auth_repository.dart';
 import 'package:mungiz/features/auth/data/profile_repository.dart';
 import 'package:mungiz/features/sync/presentation/widgets/sync_indicator.dart';
@@ -32,12 +34,10 @@ class TaskListScreen extends ConsumerStatefulWidget {
   const TaskListScreen({super.key});
 
   @override
-  ConsumerState<TaskListScreen> createState() =>
-      _TaskListScreenState();
+  ConsumerState<TaskListScreen> createState() => _TaskListScreenState();
 }
 
-class _TaskListScreenState
-    extends ConsumerState<TaskListScreen> {
+class _TaskListScreenState extends ConsumerState<TaskListScreen> {
   /// Local cache of resolved display names keyed by user ID.
   ///
   /// Populated lazily as tasks are rendered. Stores the final resolved
@@ -86,12 +86,8 @@ class _TaskListScreenState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final taskAsync = ref.watch(taskListProvider);
-    final showCompleted =
-        ref.watch(showCompletedProvider);
-    final currentUserId = ref
-        .read(authRepositoryProvider)
-        .currentUser
-        ?.id;
+    final showCompleted = ref.watch(showCompletedProvider);
+    final currentUserId = ref.read(authRepositoryProvider).currentUser?.id;
 
     return Scaffold(
       // ── App Bar ──────────────────────────────────────────
@@ -100,8 +96,7 @@ class _TaskListScreenState
           children: [
             Text(
               _greeting(),
-              style:
-                  theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
@@ -114,6 +109,13 @@ class _TaskListScreenState
           // ── Sync indicator ──
           const SyncIndicator(),
 
+          const Gap(AppSpacing.xs),
+
+          // ── Theme toggle ──
+          const AnimatedThemeToggle(),
+
+          const Gap(AppSpacing.xs),
+
           // ── Sign out ──
           IconButton(
             icon: const Icon(
@@ -121,15 +123,12 @@ class _TaskListScreenState
             ),
             tooltip: 'تسجيل الخروج',
             onPressed: () async {
-              await ref
-                  .read(authRepositoryProvider)
-                  .signOut();
+              await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) {
                 context.go(RoutePaths.login);
               }
             },
           ),
-          const SizedBox(width: AppSpacing.xs),
         ],
       ),
 
@@ -139,8 +138,7 @@ class _TaskListScreenState
           // ── Filter bar ──────────────────────────────────
           _FilterBar(
             showCompleted: showCompleted,
-            onToggle: () =>
-                ref.read(showCompletedProvider.notifier).toggle(),
+            onToggle: () => ref.read(showCompletedProvider.notifier).toggle(),
             colorScheme: colorScheme,
             theme: theme,
           ),
@@ -151,8 +149,7 @@ class _TaskListScreenState
               data: (tasks) {
                 if (tasks.isEmpty) {
                   return EmptyTasks(
-                    onCreateTask: () =>
-                        context.push(RoutePaths.createTask),
+                    onCreateTask: () => context.push(RoutePaths.createTask),
                   );
                 }
 
@@ -170,51 +167,43 @@ class _TaskListScreenState
                     String? assigneeName;
                     String? creatorName;
                     if (currentUserId != null) {
-                      if (task.assignedTo !=
-                          currentUserId) {
-                        assigneeName =
-                            _resolveProfileName(
+                      if (task.assignedTo != currentUserId) {
+                        assigneeName = _resolveProfileName(
                           task.assignedTo,
                         );
                       }
-                      if (task.createdBy !=
-                          currentUserId) {
-                        creatorName =
-                            _resolveProfileName(
+                      if (task.createdBy != currentUserId) {
+                        creatorName = _resolveProfileName(
                           task.createdBy,
                         );
                       }
                     }
 
                     return TaskCard(
-                      task: task,
-                      currentUserId:
-                          currentUserId ?? '',
-                      assigneeName: assigneeName,
-                      creatorName: creatorName,
-                      onToggleComplete: () => ref
-                          .read(
-                            taskActionsProvider,
-                          )
-                          .toggleComplete(
-                            task.id,
-                            isCompleted:
-                                !task.isCompleted,
-                          ),
-                    )
+                          task: task,
+                          currentUserId: currentUserId ?? '',
+                          assigneeName: assigneeName,
+                          creatorName: creatorName,
+                          onToggleComplete: () => ref
+                              .read(
+                                taskActionsProvider,
+                              )
+                              .toggleComplete(
+                                task.id,
+                                isCompleted: !task.isCompleted,
+                              ),
+                        )
                         .animate()
                         .fadeIn(
                           delay: Duration(
-                            milliseconds: (index * 50)
-                                .clamp(0, 300),
+                            milliseconds: (index * 50).clamp(0, 300),
                           ),
                           duration: 400.ms,
                         )
                         .slideX(
                           begin: 0.05,
                           delay: Duration(
-                            milliseconds: (index * 50)
-                                .clamp(0, 300),
+                            milliseconds: (index * 50).clamp(0, 300),
                           ),
                           duration: 400.ms,
                           curve: Curves.easeOutCubic,
@@ -238,8 +227,7 @@ class _TaskListScreenState
                 return _ErrorState(
                   error: error,
                   stack: stack,
-                  onRetry: () =>
-                      ref.invalidate(taskListProvider),
+                  onRetry: () => ref.invalidate(taskListProvider),
                 );
               },
             ),
@@ -249,8 +237,7 @@ class _TaskListScreenState
 
       // ── FAB ─────────────────────────────────────────────
       floatingActionButton: _AnimatedFab(
-        onPressed: () =>
-            context.push(RoutePaths.createTask),
+        onPressed: () => context.push(RoutePaths.createTask),
         colorScheme: colorScheme,
       ),
     );
@@ -284,44 +271,39 @@ class _FilterBar extends StatelessWidget {
       child: Row(
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: FilterChip(
-              selected: showCompleted,
-              onSelected: (_) => onToggle(),
-              avatar: AnimatedSwitcher(
-                duration: const Duration(
-                  milliseconds: 250,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: FilterChip(
+                  selected: showCompleted,
+                  onSelected: (_) => onToggle(),
+                  avatar: AnimatedSwitcher(
+                    duration: const Duration(
+                      milliseconds: 250,
+                    ),
+                    child: Icon(
+                      showCompleted
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
+                      key: ValueKey(showCompleted),
+                      size: 18,
+                    ),
+                  ),
+                  label: Text(
+                    showCompleted ? 'إخفاء المكتملة' : 'عرض المكتملة',
+                    style: theme.textTheme.labelMedium,
+                  ),
+                  selectedColor: colorScheme.primaryContainer,
+                  checkmarkColor: colorScheme.onPrimaryContainer,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: showCompleted
+                          ? colorScheme.primary.withValues(alpha: 0.3)
+                          : colorScheme.outlineVariant,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  showCompleted
-                      ? Icons.visibility_rounded
-                      : Icons.visibility_off_rounded,
-                  key: ValueKey(showCompleted),
-                  size: 18,
-                ),
-              ),
-              label: Text(
-                showCompleted
-                    ? 'إخفاء المكتملة'
-                    : 'عرض المكتملة',
-                style: theme.textTheme.labelMedium,
-              ),
-              selectedColor:
-                  colorScheme.primaryContainer,
-              checkmarkColor:
-                  colorScheme.onPrimaryContainer,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: showCompleted
-                      ? colorScheme.primary
-                          .withValues(alpha: 0.3)
-                      : colorScheme.outlineVariant,
-                ),
-              ),
-            ),
-          )
+              )
               .animate()
               .fadeIn(duration: 400.ms)
               .slideX(
@@ -350,18 +332,18 @@ class _AnimatedFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton.extended(
-      onPressed: onPressed,
-      icon: const Icon(Icons.add_rounded),
-      label: const Text('مهمة جديدة'),
-      elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          AppSpacing.cardRadius,
-        ),
-      ),
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
-    )
+          onPressed: onPressed,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('مهمة جديدة'),
+          elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              AppSpacing.cardRadius,
+            ),
+          ),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+        )
         .animate()
         .fadeIn(delay: 300.ms, duration: 500.ms)
         .slideY(
@@ -397,19 +379,20 @@ class _ShimmerList extends StatelessWidget {
       itemCount: 5,
       itemBuilder: (context, index) {
         return Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.screenPaddingH,
-            vertical: AppSpacing.sm / 2,
-          ),
-          height: 88,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              AppSpacing.cardRadius,
-            ),
-            color: colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.4),
-          ),
-        )
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPaddingH,
+                vertical: AppSpacing.sm / 2,
+              ),
+              height: 88,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(
+                  AppSpacing.cardRadius,
+                ),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
+              ),
+            )
             .animate(
               onPlay: (c) => c.repeat(),
             )
@@ -418,8 +401,7 @@ class _ShimmerList extends StatelessWidget {
               delay: Duration(
                 milliseconds: index * 100,
               ),
-              color: colorScheme.surfaceContainerHigh
-                  .withValues(alpha: 0.5),
+              color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
             )
             .animate()
             .fadeIn(

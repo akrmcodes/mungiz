@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mungiz/core/providers/theme_mode_provider.dart';
 import 'package:mungiz/core/router/app_router.dart';
 import 'package:mungiz/core/theme/app_theme.dart';
 
@@ -24,6 +25,7 @@ class MungizApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       // ── Identity ──
@@ -44,6 +46,7 @@ class MungizApp extends ConsumerWidget {
       // ── Theme ──
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      themeMode: themeMode,
 
       // ── Router ──
       routerConfig: router,

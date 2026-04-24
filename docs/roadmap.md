@@ -403,9 +403,9 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `core/providers/theme_mode_provider.dart`: persisted theme mode (light/dark/system)
-- [ ] Add theme toggle switch to app settings or app bar
-- [ ] Wire theme mode provider into `MaterialApp.router`
+- [x] Create `core/providers/theme_mode_provider.dart`: persisted theme mode (light/dark/system)
+- [x] Add theme toggle switch to app settings or app bar
+- [x] Wire theme mode provider into `MaterialApp.router`
 - [ ] Add shimmer/skeleton loading states to task list, dashboard, profile screens
 - [ ] Implement staggered list animations on task list with `flutter_animate`
 - [ ] Add hero/shared-element transitions for screen navigation
