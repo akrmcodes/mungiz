@@ -2,7 +2,22 @@
 ///
 /// All task state is derived from the local Drift database via
 /// [TaskLocalRepository]. The UI never queries Supabase directly.
+///
+/// IMPORTANT — keepAlive rationale:
+/// Both [showCompletedProvider] and [taskListProvider] MUST be keepAlive
+/// (i.e., NOT autoDispose). The app uses StatefulShellRoute.indexedStack;
+/// when the user switches to the Dashboard tab, GoRouter keeps the Tasks
+/// branch widget alive in the stack but all Riverpod listeners detach.
+/// autoDispose providers are torn down the moment their last listener
+/// unsubscribes. On return to Tasks, Riverpod must recreate them from
+/// scratch. The dependency chain (taskListProvider watches
+/// showCompletedProvider) combined with autoDispose creates a race
+/// condition: taskListProvider permanently stays in AsyncLoading,
+/// rendering the _ShimmerList that appears as a black screen when the
+/// theme background hasn't yet resolved.
 library;
+
+import 'dart:developer' as dev;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mungiz/core/database/app_database.dart';
@@ -19,7 +34,11 @@ part 'task_providers.g.dart';
 /// Whether the task list should include completed tasks.
 ///
 /// Defaults to `false` (completed tasks are hidden).
-@riverpod
+///
+/// keepAlive: true — must survive StatefulShellRoute tab switches.
+/// If autoDispose, switching to Dashboard and back resets this to
+/// `false` and triggers a taskListProvider rebuild cascade.
+@Riverpod(keepAlive: true)
 class ShowCompleted extends _$ShowCompleted {
   @override
   bool build() => false;
@@ -43,15 +62,30 @@ class ShowCompleted extends _$ShowCompleted {
 /// Uses a manually declared [StreamProvider] because `riverpod_generator`
 /// throws `InvalidTypeException` on Drift-generated data classes
 /// (e.g. `TaskEntry`).
+///
+/// keepAlive: true — NOT autoDispose. Survives StatefulShellRoute tab
+/// switches so the stream is never torn down mid-navigation. Without
+/// keepAlive the provider disposes when Tasks branch loses focus and
+/// recreates on return, causing a permanent AsyncLoading black screen.
 final StreamProvider<List<TaskEntry>> taskListProvider =
-    StreamProvider.autoDispose<List<TaskEntry>>((ref) {
+    StreamProvider<List<TaskEntry>>((ref) {
   final userId =
       Supabase.instance.client.auth.currentUser?.id;
 
-  if (userId == null) return Stream.value([]);
+  if (userId == null) {
+    dev.log(
+      '[taskListProvider] No authenticated user — returning empty list.',
+      name: 'TaskProviders',
+    );
+    return Stream.value([]);
+  }
 
-  final showCompleted =
-      ref.watch(showCompletedProvider);
+  dev.log(
+    '[taskListProvider] Subscribing to Drift stream for user $userId.',
+    name: 'TaskProviders',
+  );
+
+  final showCompleted = ref.watch(showCompletedProvider);
   final repo = ref.watch(taskLocalRepositoryProvider);
 
   return repo.watchTasks(
@@ -70,6 +104,7 @@ final StreamProvider<List<TaskEntry>> taskListProvider =
 /// in the UI via the reactive Drift stream.
 ///
 /// Manually declared for the same codegen reason as [taskListProvider].
+/// keepAlive implicitly (Provider without autoDispose modifier).
 final taskActionsProvider = Provider<TaskActionsNotifier>((ref) {
   return TaskActionsNotifier(
     repo: ref.watch(taskLocalRepositoryProvider),
