@@ -14,12 +14,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
+import 'package:mungiz/core/database/app_database.dart';
 import 'package:mungiz/core/providers/supabase_providers.dart';
 import 'package:mungiz/features/auth/presentation/login_screen.dart';
 import 'package:mungiz/features/auth/presentation/register_screen.dart';
 import 'package:mungiz/features/auth/presentation/screens/profile_screen.dart';
 import 'package:mungiz/features/core/presentation/scaffold_with_nav_bar.dart';
 import 'package:mungiz/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:mungiz/features/tasks/data/task_local_repository.dart';
 import 'package:mungiz/features/tasks/presentation/screens/create_task_screen.dart';
 import 'package:mungiz/features/tasks/presentation/screens/task_list_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -35,6 +37,103 @@ class _RouterRefreshNotifier extends ChangeNotifier {
   }
 }
 
+class _EditTaskRouteLoader extends StatefulWidget {
+  const _EditTaskRouteLoader({
+    required this.taskId,
+    required this.taskRepository,
+  });
+
+  final String taskId;
+  final TaskLocalRepository taskRepository;
+
+  @override
+  State<_EditTaskRouteLoader> createState() => _EditTaskRouteLoaderState();
+}
+
+class _EditTaskRouteLoaderState extends State<_EditTaskRouteLoader> {
+  late final Future<TaskEntry?> _taskFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _taskFuture = widget.taskRepository.getTaskById(widget.taskId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<TaskEntry?>(
+      future: _taskFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final task = snapshot.data;
+        if (task == null) {
+          return const _TaskEditUnavailableScreen();
+        }
+
+        return CreateTaskScreen(existingTask: task);
+      },
+    );
+  }
+}
+
+class _TaskEditUnavailableScreen extends StatelessWidget {
+  const _TaskEditUnavailableScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('تعديل المهمة'),
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'تعذر العثور على المهمة',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'ربما تم حذفها أو لم تعد متاحة.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Provides the singleton [GoRouter] instance and refreshes redirects when
 /// auth state changes.
 @Riverpod(keepAlive: true)
@@ -47,6 +146,7 @@ GoRouter appRouter(Ref ref) {
   final dashboardKey = GlobalKey<NavigatorState>(debugLabel: 'dashboard');
   final profileKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
   final routerRefreshNotifier = _RouterRefreshNotifier();
+  final taskRepository = ref.read(taskLocalRepositoryProvider);
 
   ref
     ..listen(authStateChangesProvider, (
@@ -101,6 +201,27 @@ GoRouter appRouter(Ref ref) {
         path: RoutePaths.createTask,
         name: 'createTask',
         builder: (context, state) => const CreateTaskScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootKey,
+        path: RoutePaths.editTask,
+        name: 'editTask',
+        builder: (context, state) {
+          final existingTask = state.extra;
+          if (existingTask is TaskEntry) {
+            return CreateTaskScreen(existingTask: existingTask);
+          }
+
+          final taskId = state.pathParameters['id'];
+          if (taskId == null || taskId.isEmpty) {
+            return const _TaskEditUnavailableScreen();
+          }
+
+          return _EditTaskRouteLoader(
+            taskId: taskId,
+            taskRepository: taskRepository,
+          );
+        },
       ),
 
       // ── Shell: Tab navigation ───────────────────────────────────

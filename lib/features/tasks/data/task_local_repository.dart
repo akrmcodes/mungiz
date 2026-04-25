@@ -126,6 +126,12 @@ class TaskLocalRepository {
         );
   }
 
+  SyncStatus _syncStatusForMutation(TaskEntry task) {
+    return task.syncStatus == SyncStatus.pendingCreate
+        ? SyncStatus.pendingCreate
+        : SyncStatus.pendingUpdate;
+  }
+
   // ── FK helpers ───────────────────────────────────────────────────────────
 
   /// Ensures a [Profiles] row exists for [userId] so that the FK constraint
@@ -212,10 +218,70 @@ class TaskLocalRepository {
     String taskId, {
     required bool isCompleted,
   }) async {
+    final task = await getTaskById(taskId);
+    if (task == null || task.syncStatus == SyncStatus.pendingDelete) {
+      return;
+    }
+
     await (_db.update(_db.tasks)..where((t) => t.id.equals(taskId))).write(
       TasksCompanion(
         isCompleted: Value(isCompleted),
-        syncStatus: const Value(SyncStatus.pendingUpdate),
+        syncStatus: Value(_syncStatusForMutation(task)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Updates an existing task in the local database.
+  ///
+  /// Pending-create rows stay pending-create so the sync engine still
+  /// pushes them as a single create operation.
+  Future<void> updateTask({
+    required String taskId,
+    required String title,
+    required String assignedTo,
+    String? description,
+    DateTime? dueAt,
+  }) async {
+    final task = await getTaskById(taskId);
+    if (task == null || task.syncStatus == SyncStatus.pendingDelete) {
+      return;
+    }
+
+    await _ensureProfileExists(task.createdBy);
+    await _ensureProfileExists(assignedTo);
+
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(taskId))).write(
+      TasksCompanion(
+        title: Value(title),
+        description: Value(description),
+        dueAt: Value(dueAt),
+        assignedTo: Value(assignedTo),
+        syncStatus: Value(_syncStatusForMutation(task)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Marks a task for deletion, preserving offline sync semantics.
+  ///
+  /// Pending-create rows are removed locally because no remote row exists
+  /// yet. Synced or pending-update rows are marked pending-delete so the
+  /// sync engine can push the remote delete before removing them locally.
+  Future<void> deleteTask(String taskId) async {
+    final task = await getTaskById(taskId);
+    if (task == null || task.syncStatus == SyncStatus.pendingDelete) {
+      return;
+    }
+
+    if (task.syncStatus == SyncStatus.pendingCreate) {
+      await (_db.delete(_db.tasks)..where((t) => t.id.equals(taskId))).go();
+      return;
+    }
+
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(taskId))).write(
+      TasksCompanion(
+        syncStatus: const Value(SyncStatus.pendingDelete),
         updatedAt: Value(DateTime.now()),
       ),
     );

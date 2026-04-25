@@ -10,6 +10,7 @@
 ///   - Haptic feedback on successful creation.
 library;
 
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -17,7 +18,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mungiz/core/database/app_database.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
+import 'package:mungiz/features/auth/data/auth_repository.dart';
 import 'package:mungiz/features/auth/data/profile_repository.dart';
 import 'package:mungiz/features/tasks/presentation/providers/task_providers.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/task_composer_hero.dart';
@@ -25,7 +28,10 @@ import 'package:mungiz/features/tasks/presentation/widgets/task_composer_hero.da
 /// Full-screen form for creating a new task.
 class CreateTaskScreen extends ConsumerStatefulWidget {
   /// Creates a [CreateTaskScreen].
-  const CreateTaskScreen({super.key});
+  const CreateTaskScreen({this.existingTask, super.key});
+
+  /// The task being edited, or `null` when creating a new task.
+  final TaskEntry? existingTask;
 
   @override
   ConsumerState<CreateTaskScreen> createState() => _CreateTaskScreenState();
@@ -43,9 +49,23 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   bool _isSubmitting = false;
   bool _isLookingUpUser = false;
 
+  bool get _isEditing => widget.existingTask != null;
+
   @override
   void initState() {
     super.initState();
+    final existingTask = widget.existingTask;
+    if (existingTask != null) {
+      _titleController.text = existingTask.title;
+      _descriptionController.text = existingTask.description ?? '';
+      _selectedDueDate = existingTask.dueAt;
+
+      final currentUserId = ref.read(authRepositoryProvider).currentUser?.id;
+      if (existingTask.assignedTo != currentUserId) {
+        unawaited(_prefillAssigneeEmail(existingTask.assignedTo));
+      }
+    }
+
     // Auto-focus the title field after the entrance animation.
     Future.delayed(600.ms, () {
       if (mounted) _titleFocus.requestFocus();
@@ -62,12 +82,28 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     super.dispose();
   }
 
+  Future<void> _prefillAssigneeEmail(String userId) async {
+    final cachedProfile = await ref
+        .read(profileRepositoryProvider)
+        .getCachedProfile(userId);
+
+    if (!mounted || cachedProfile == null) return;
+
+    final email = cachedProfile.email.trim();
+    if (email.isEmpty || _assignEmailController.text.isNotEmpty) return;
+
+    setState(() {
+      _assignEmailController.text = email;
+    });
+  }
+
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
     try {
+      final currentUserId = ref.read(authRepositoryProvider).currentUser?.id;
       String? assignedToId;
 
       // ── Async email lookup ──────────────────────────────────
@@ -92,18 +128,43 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             setState(() => _isLookingUpUser = false);
           }
         }
+      } else if (_isEditing) {
+        assignedToId = widget.existingTask!.assignedTo;
+      } else {
+        assignedToId = currentUserId;
       }
 
-      await ref
-          .read(taskActionsProvider)
-          .addTask(
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
-            dueAt: _selectedDueDate,
-            assignedTo: assignedToId,
-          );
+      if (!_isEditing && currentUserId == null) {
+        if (!mounted) return;
+        _showErrorSnackBar('تعذر تحديد المستخدم الحالي');
+        return;
+      }
+
+      final title = _titleController.text.trim();
+      final description = _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim();
+
+      if (_isEditing) {
+        await ref
+            .read(taskActionsProvider)
+            .updateTask(
+              taskId: widget.existingTask!.id,
+              title: title,
+              description: description,
+              dueAt: _selectedDueDate,
+              assignedTo: assignedToId ?? widget.existingTask!.assignedTo,
+            );
+      } else {
+        await ref
+            .read(taskActionsProvider)
+            .addTask(
+              title: title,
+              description: description,
+              dueAt: _selectedDueDate,
+              assignedTo: assignedToId,
+            );
+      }
 
       if (!mounted) return;
 
@@ -115,7 +176,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: const Text('تم إنشاء المهمة بنجاح ✓'),
+            content: Text(
+              _isEditing
+                  ? 'تم تحديث المهمة بنجاح ✓'
+                  : 'تم إنشاء المهمة بنجاح ✓',
+            ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
           ),
@@ -123,13 +188,15 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       context.pop();
     } on Object catch (e, st) {
       log(
-        'Task Creation Failed',
+        _isEditing ? 'Task Update Failed' : 'Task Creation Failed',
         name: 'CreateTaskScreen',
         error: e,
         stackTrace: st,
       );
       if (mounted) {
-        _showErrorSnackBar('فشل في إنشاء المهمة');
+        _showErrorSnackBar(
+          _isEditing ? 'فشل في تحديث المهمة' : 'فشل في إنشاء المهمة',
+        );
       }
     } finally {
       if (mounted) {
@@ -248,7 +315,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         title: const SizedBox.shrink(),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
-          tooltip: 'إغلاق',
+          tooltip: _isEditing ? 'إلغاء التعديل' : 'إغلاق',
           onPressed: () => context.pop(),
         ),
       ),
@@ -269,8 +336,13 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const TaskComposerHero(
-                    child: TaskComposerHeroHeader(),
+                  TaskComposerHero(
+                    child: TaskComposerHeroHeader(
+                      title: _isEditing ? 'تعديل المهمة' : 'مهمة جديدة',
+                      subtitle: _isEditing
+                          ? 'راجع التفاصيل ثم احفظ التغييرات.'
+                          : 'ابدأ بعنوان واضح، ثم أضف التفاصيل عندما تحتاجها.',
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
@@ -373,6 +445,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                         controller: _assignEmailController,
                         focusNode: _assignEmailFocus,
                         isLoading: _isLookingUpUser,
+                        helperText: _isEditing
+                            ? 'اتركه فارغًا للحفاظ على التكليف الحالي'
+                            : null,
                         colorScheme: colorScheme,
                         theme: theme,
                       )
@@ -421,7 +496,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                                       width: AppSpacing.sm,
                                     ),
                                     Text(
-                                      'إنشاء المهمة',
+                                      _isEditing
+                                          ? 'حفظ التغييرات'
+                                          : 'إنشاء المهمة',
                                       style: theme.textTheme.labelLarge
                                           ?.copyWith(
                                             color: colorScheme.onPrimary,
@@ -461,6 +538,7 @@ class _AssignToField extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.isLoading,
+    required this.helperText,
     required this.colorScheme,
     required this.theme,
   });
@@ -468,6 +546,7 @@ class _AssignToField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isLoading;
+  final String? helperText;
   final ColorScheme colorScheme;
   final ThemeData theme;
 
@@ -506,6 +585,8 @@ class _AssignToField extends StatelessWidget {
             hintText: 'example@email.com',
             hintTextDirection: TextDirection.ltr,
             prefixIcon: const Icon(Icons.alternate_email_rounded),
+            helperText: helperText,
+            helperMaxLines: 2,
             suffixIcon: isLoading
                 ? const Padding(
                     padding: EdgeInsets.all(12),
@@ -533,7 +614,6 @@ class _AssignToField extends StatelessWidget {
                 : null,
             filled: true,
             fillColor: colorScheme.surfaceContainerLowest,
-            helperText: 'اتركه فارغاً لإنشاء مهمة شخصية',
             helperStyle: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),

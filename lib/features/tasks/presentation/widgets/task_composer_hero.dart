@@ -68,7 +68,17 @@ Widget _buildFlightShuttle(
 
 class TaskComposerHeroHeader extends StatelessWidget {
   /// Creates the destination header shown on the create screen.
-  const TaskComposerHeroHeader({super.key});
+  const TaskComposerHeroHeader({
+    this.title = 'مهمة جديدة',
+    this.subtitle = 'ابدأ بعنوان واضح، ثم أضف التفاصيل عندما تحتاجها.',
+    super.key,
+  });
+
+  /// The heading displayed in the hero surface.
+  final String title;
+
+  /// The supporting subtitle displayed below the heading.
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +114,7 @@ class TaskComposerHeroHeader extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'مهمة جديدة',
+                    title,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
@@ -113,7 +123,7 @@ class TaskComposerHeroHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'ابدأ بعنوان واضح، ثم أضف التفاصيل عندما تحتاجها.',
+                    subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       height: 1.35,

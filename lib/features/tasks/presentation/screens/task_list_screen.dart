@@ -16,6 +16,7 @@ import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
@@ -168,60 +169,112 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.only(
-                    top: AppSpacing.sm,
-                    bottom: 100, // FAB clearance
+                return SlidableAutoCloseBehavior(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(
+                      top: AppSpacing.sm,
+                      bottom: 100, // FAB clearance
+                    ),
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = tasks[index];
+
+                      // Resolve profile names for
+                      // assignment badges.
+                      String? assigneeName;
+                      String? creatorName;
+                      if (currentUserId != null) {
+                        if (task.assignedTo != currentUserId) {
+                          assigneeName = _resolveProfileName(
+                            task.assignedTo,
+                          );
+                        }
+                        if (task.createdBy != currentUserId) {
+                          creatorName = _resolveProfileName(
+                            task.createdBy,
+                          );
+                        }
+                      }
+
+                      final itemDelay = Duration(
+                        milliseconds: index * 75,
+                      );
+                      final hasAnimatedOnce = _animatedTaskIds.contains(
+                        task.id,
+                      );
+
+                      return _StaggeredTaskEntry(
+                        key: ValueKey(task.id),
+                        alreadyAnimated: hasAnimatedOnce,
+                        delay: itemDelay,
+                        onAnimationStarted: () {
+                          _animatedTaskIds.add(task.id);
+                        },
+                        child: TaskCard(
+                          task: task,
+                          currentUserId: currentUserId ?? '',
+                          assigneeName: assigneeName,
+                          creatorName: creatorName,
+                          onToggleComplete: () => ref
+                              .read(
+                                taskActionsProvider,
+                              )
+                              .toggleComplete(
+                                task.id,
+                                isCompleted: !task.isCompleted,
+                              ),
+                          onEdit: () async {
+                            await context.pushNamed(
+                              'editTask',
+                              pathParameters: {'id': task.id},
+                              extra: task,
+                            );
+                          },
+                          onDelete: () async {
+                            try {
+                              await ref
+                                  .read(taskActionsProvider)
+                                  .deleteTask(task.id);
+
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text(
+                                      'تم حذف المهمة بنجاح ✓',
+                                    ),
+                                    backgroundColor: colorScheme.primary,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                            } on Object catch (e, st) {
+                              dev.log(
+                                '[TaskListScreen] Failed to delete task '
+                                '${task.id}',
+                                name: 'TaskListScreen',
+                                error: e,
+                                stackTrace: st,
+                              );
+
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text('فشل حذف المهمة'),
+                                    backgroundColor: colorScheme.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                            }
+                          },
+                        ),
+                      );
+                    },
                   ),
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-
-                    // Resolve profile names for
-                    // assignment badges.
-                    String? assigneeName;
-                    String? creatorName;
-                    if (currentUserId != null) {
-                      if (task.assignedTo != currentUserId) {
-                        assigneeName = _resolveProfileName(
-                          task.assignedTo,
-                        );
-                      }
-                      if (task.createdBy != currentUserId) {
-                        creatorName = _resolveProfileName(
-                          task.createdBy,
-                        );
-                      }
-                    }
-
-                    final itemDelay = Duration(
-                      milliseconds: index * 75,
-                    );
-                    final hasAnimatedOnce = _animatedTaskIds.contains(task.id);
-
-                    return _StaggeredTaskEntry(
-                      key: ValueKey(task.id),
-                      alreadyAnimated: hasAnimatedOnce,
-                      delay: itemDelay,
-                      onAnimationStarted: () {
-                        _animatedTaskIds.add(task.id);
-                      },
-                      child: TaskCard(
-                        task: task,
-                        currentUserId: currentUserId ?? '',
-                        assigneeName: assigneeName,
-                        creatorName: creatorName,
-                        onToggleComplete: () => ref
-                            .read(
-                              taskActionsProvider,
-                            )
-                            .toggleComplete(
-                              task.id,
-                              isCompleted: !task.isCompleted,
-                            ),
-                      ),
-                    );
-                  },
                 );
               },
               loading: () => const _ShimmerList(),
