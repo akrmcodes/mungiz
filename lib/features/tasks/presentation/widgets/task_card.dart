@@ -136,27 +136,17 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _closeSlidable() async {
-    await _slidableController.close(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
   Future<void> _handleEditRequested() async {
-    await _closeSlidable();
     if (!mounted) return;
     await widget.onEdit();
   }
 
   Future<void> _handleDeleteRequested() async {
-    await _closeSlidable();
     if (!mounted) return;
 
     final shouldDelete = await _showDeleteConfirmation();
     if (!shouldDelete || !mounted) return;
 
-    await HapticFeedback.mediumImpact();
     await widget.onDelete();
   }
 
@@ -315,10 +305,13 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
       groupTag: _taskSlidableGroupTag,
       startActionPane: ActionPane(
         motion: const StretchMotion(),
-        extentRatio: 0.24,
+        extentRatio: 0.28,
         children: [
           SlidableAction(
-            onPressed: (_) => unawaited(_handleEditRequested()),
+            onPressed: (context) async {
+              await HapticFeedback.mediumImpact();
+              await _handleEditRequested();
+            },
             backgroundColor: colorScheme.primary,
             foregroundColor: colorScheme.onPrimary,
             icon: Icons.edit_rounded,
@@ -328,10 +321,13 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
       ),
       endActionPane: ActionPane(
         motion: const StretchMotion(),
-        extentRatio: 0.24,
+        extentRatio: 0.28,
         children: [
           SlidableAction(
-            onPressed: (_) => unawaited(_handleDeleteRequested()),
+            onPressed: (context) async {
+              await HapticFeedback.mediumImpact();
+              await _handleDeleteRequested();
+            },
             backgroundColor: colorScheme.error,
             foregroundColor: colorScheme.onError,
             icon: Icons.delete_outline_rounded,
