@@ -521,10 +521,14 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
               ),
               PositionedDirectional(
                 end: AppSpacing.xs,
-                top: AppSpacing.xs,
-                child: _TaskCardMenuButton(
-                  onPressed: _showActionsSheet,
-                  colorScheme: colorScheme,
+                top: 0,
+                bottom: 0,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _TaskCardMenuButton(
+                    onPressed: _showActionsSheet,
+                    colorScheme: colorScheme,
+                  ),
                 ),
               ),
             ],
@@ -551,19 +555,16 @@ class _TaskCardMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.88),
-      shape: const CircleBorder(),
-      child: IconButton(
-        onPressed: onPressed,
-        tooltip: 'المزيد',
-        icon: const Icon(Icons.more_vert),
-        iconSize: 20,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(
-          width: 36,
-          height: 36,
-        ),
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: 'المزيد',
+      icon: const Icon(Icons.more_vert),
+      iconSize: 20,
+      color: colorScheme.onSurfaceVariant,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(
+        width: 36,
+        height: 36,
       ),
     );
   }
