@@ -22,8 +22,14 @@ abstract final class RoutePaths {
   /// Create a new task.
   static const String createTask = '/tasks/create';
 
+  /// Edit an existing task.
+  static const String editTask = '/tasks/edit/:id';
+
   /// Dashboard / analytics.
   static const String dashboard = '/dashboard';
+
+  /// Profile / account.
+  static const String profile = '/profile';
 }
 
 /// Supabase remote table names, kept in sync with `supabase/schema.sql`.

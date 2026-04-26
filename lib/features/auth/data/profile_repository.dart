@@ -3,6 +3,7 @@
 /// Provides three primary operations:
 ///   - `findUserByEmail`: Queries Supabase `profiles` by email and caches
 ///     the result in the local Drift database. Requires connectivity.
+///   - `updateDisplayName`: Persists the display name to Supabase and Drift.
 ///   - `getCachedProfile`: Reads a profile from the local Drift database
 ///     without any network calls.
 ///   - `resolveProfile`: Local-first lookup by UUID; falls back to Supabase
@@ -18,10 +19,12 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/database/app_database.dart';
 import 'package:mungiz/core/providers/database_providers.dart';
 import 'package:mungiz/core/providers/supabase_providers.dart';
+import 'package:mungiz/features/auth/data/auth_repository.dart';
 import 'package:mungiz/features/auth/domain/user_profile.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -71,6 +74,20 @@ ProfileRepository profileRepository(Ref ref) {
   );
 }
 
+/// Streams the current authenticated user's cached profile from Drift.
+final StreamProvider<ProfileEntry?> currentUserProfileProvider =
+    StreamProvider<ProfileEntry?>((ref) {
+      final userId = ref.watch(authRepositoryProvider).currentUser?.id;
+      if (userId == null) {
+        return Stream<ProfileEntry?>.value(null);
+      }
+
+      final db = ref.watch(appDatabaseProvider);
+      return (db.select(
+        db.profiles,
+      )..where((p) => p.id.equals(userId))).watchSingleOrNull();
+    });
+
 // ─────────────────────────────────────────────────────────────────────────
 // Repository
 // ─────────────────────────────────────────────────────────────────────────
@@ -81,8 +98,8 @@ class ProfileRepository {
   const ProfileRepository({
     required SupabaseClient client,
     required AppDatabase db,
-  })  : _client = client,
-        _db = db;
+  }) : _client = client,
+       _db = db;
 
   final SupabaseClient _client;
   final AppDatabase _db;
@@ -110,14 +127,7 @@ class ProfileRepository {
       }
 
       // Cache in Drift for offline access.
-      await _db.into(_db.profiles).insertOnConflictUpdate(
-            ProfilesCompanion(
-              id: Value(data['id'] as String),
-              email: Value(data['email'] as String),
-              displayName: Value(data['display_name'] as String?),
-              avatarUrl: Value(data['avatar_url'] as String?),
-            ),
-          );
+      await _cacheRemoteProfile(data);
 
       log(
         'Profile found and cached for ${data['email']}',
@@ -149,15 +159,75 @@ class ProfileRepository {
     }
   }
 
+  /// Updates the user's display name in Supabase and the local Drift cache.
+  Future<void> updateDisplayName(
+    String userId,
+    String displayName,
+  ) async {
+    final normalizedDisplayName = _normalizeDisplayName(displayName);
+    final now = DateTime.now();
+    final cachedProfile = await getCachedProfile(userId);
+    final email =
+        cachedProfile?.email ?? _client.auth.currentUser?.email ?? userId;
+
+    try {
+      await _client
+          .from(SupabaseTables.profiles)
+          .update({
+            'display_name': normalizedDisplayName,
+            'updated_at': now.toIso8601String(),
+          })
+          .eq('id', userId);
+
+      await _db
+          .into(_db.profiles)
+          .insertOnConflictUpdate(
+            ProfilesCompanion(
+              id: Value(userId),
+              email: Value(email),
+              displayName: Value(normalizedDisplayName),
+              avatarUrl: cachedProfile?.avatarUrl != null
+                  ? Value(cachedProfile!.avatarUrl)
+                  : const Value.absent(),
+              updatedAt: Value(now),
+            ),
+          );
+
+      log(
+        'Display name updated for $userId',
+        name: 'ProfileRepository',
+      );
+    } on SocketException {
+      throw const ProfileLookupException();
+    } on AuthException {
+      throw const ProfileLookupException();
+    } on PostgrestException catch (e) {
+      log(
+        'Supabase update error during display name change',
+        name: 'ProfileRepository',
+        error: e,
+      );
+      throw const ProfileLookupException();
+    } on Object catch (e, st) {
+      log(
+        'Unexpected error during display name update',
+        name: 'ProfileRepository',
+        error: e,
+        stackTrace: st,
+      );
+      throw const ProfileLookupException();
+    }
+  }
+
   // ── Local lookup ───────────────────────────────────────────────────────
 
   /// Returns a locally cached profile by [userId], or `null` if not found.
   ///
   /// This never hits the network — it reads exclusively from Drift.
   Future<ProfileEntry?> getCachedProfile(String userId) async {
-    return (_db.select(_db.profiles)
-          ..where((p) => p.id.equals(userId)))
-        .getSingleOrNull();
+    return (_db.select(
+      _db.profiles,
+    )..where((p) => p.id.equals(userId))).getSingleOrNull();
   }
 
   // ── Resolve (local-first, remote fallback) ────────────────────────────
@@ -175,7 +245,7 @@ class ProfileRepository {
     // 1 — Local hit.
     final cached = await getCachedProfile(userId);
     if (cached != null) {
-      return cached.displayName ?? cached.email;
+      return cached.displayLabel;
     }
 
     // 2 — Remote fallback: query Supabase by the auth UUID.
@@ -189,23 +259,17 @@ class ProfileRepository {
       if (data == null) return null;
 
       // Cache so future calls are instant.
-      await _db.into(_db.profiles).insertOnConflictUpdate(
-            ProfilesCompanion(
-              id: Value(data['id'] as String),
-              email: Value(data['email'] as String),
-              displayName: Value(data['display_name'] as String?),
-              avatarUrl: Value(data['avatar_url'] as String?),
-            ),
-          );
+      await _cacheRemoteProfile(data);
 
       log(
         'Profile resolved from remote for $userId',
         name: 'ProfileRepository',
       );
 
-      final displayName = data['display_name'] as String?;
-      final email = data['email'] as String;
-      return displayName ?? email;
+      return _resolveDisplayLabel(
+        displayName: data['display_name'] as String?,
+        email: data['email'] as String?,
+      );
     } on Object catch (e, st) {
       log(
         'resolveProfile failed for $userId',
@@ -215,5 +279,47 @@ class ProfileRepository {
       );
       return null;
     }
+  }
+
+  Future<void> _cacheRemoteProfile(Map<String, dynamic> data) async {
+    await _db
+        .into(_db.profiles)
+        .insertOnConflictUpdate(
+          ProfilesCompanion(
+            id: Value(data['id'] as String),
+            email: Value(data['email'] as String),
+            displayName: Value(
+              _normalizeDisplayName(data['display_name'] as String?),
+            ),
+            avatarUrl: data['avatar_url'] != null
+                ? Value(data['avatar_url'] as String?)
+                : const Value.absent(),
+          ),
+        );
+  }
+
+  String? _resolveDisplayLabel({
+    required String? displayName,
+    required String? email,
+  }) {
+    final normalizedDisplayName = _normalizeDisplayName(displayName);
+    if (normalizedDisplayName != null) {
+      return normalizedDisplayName;
+    }
+
+    final normalizedEmail = email?.trim();
+    if (normalizedEmail != null && normalizedEmail.isNotEmpty) {
+      return normalizedEmail;
+    }
+
+    return null;
+  }
+
+  String? _normalizeDisplayName(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
   }
 }

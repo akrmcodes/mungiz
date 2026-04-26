@@ -16,15 +16,19 @@ import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
 import 'package:mungiz/core/theme/app_spacing.dart';
+import 'package:mungiz/core/theme/widgets/animated_theme_toggle.dart';
 import 'package:mungiz/features/auth/data/auth_repository.dart';
 import 'package:mungiz/features/auth/data/profile_repository.dart';
 import 'package:mungiz/features/sync/presentation/widgets/sync_indicator.dart';
 import 'package:mungiz/features/tasks/presentation/providers/task_providers.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/empty_tasks.dart';
 import 'package:mungiz/features/tasks/presentation/widgets/task_card.dart';
+import 'package:mungiz/features/tasks/presentation/widgets/task_composer_hero.dart';
 
 /// The main task list screen — the app's default landing screen.
 class TaskListScreen extends ConsumerStatefulWidget {
@@ -32,18 +36,22 @@ class TaskListScreen extends ConsumerStatefulWidget {
   const TaskListScreen({super.key});
 
   @override
-  ConsumerState<TaskListScreen> createState() =>
-      _TaskListScreenState();
+  ConsumerState<TaskListScreen> createState() => _TaskListScreenState();
 }
 
-class _TaskListScreenState
-    extends ConsumerState<TaskListScreen> {
+class _TaskListScreenState extends ConsumerState<TaskListScreen> {
   /// Local cache of resolved display names keyed by user ID.
   ///
   /// Populated lazily as tasks are rendered. Stores the final resolved
   /// string (displayName ?? email) so repeated renders are instant.
   /// A `null` value means the lookup ran but found nothing.
   final Map<String, String?> _profileCache = {};
+
+  /// Task IDs whose entrance animation has already played.
+  ///
+  /// Keeps the staggered list from replaying when the list lazily rebuilds
+  /// off-screen items during scroll stress.
+  final Set<String> _animatedTaskIds = <String>{};
 
   /// Resolves a display name for a user ID.
   ///
@@ -86,12 +94,16 @@ class _TaskListScreenState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final taskAsync = ref.watch(taskListProvider);
-    final showCompleted =
-        ref.watch(showCompletedProvider);
-    final currentUserId = ref
-        .read(authRepositoryProvider)
-        .currentUser
-        ?.id;
+    final showCompleted = ref.watch(showCompletedProvider);
+    final currentUserId = ref.read(authRepositoryProvider).currentUser?.id;
+
+    ref.listen(currentUserProfileProvider, (previous, next) {
+      if (!mounted || _profileCache.isEmpty) {
+        return;
+      }
+
+      setState(_profileCache.clear);
+    });
 
     return Scaffold(
       // ── App Bar ──────────────────────────────────────────
@@ -100,8 +112,7 @@ class _TaskListScreenState
           children: [
             Text(
               _greeting(),
-              style:
-                  theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
@@ -114,6 +125,13 @@ class _TaskListScreenState
           // ── Sync indicator ──
           const SyncIndicator(),
 
+          const Gap(AppSpacing.xs),
+
+          // ── Theme toggle ──
+          const AnimatedThemeToggle(),
+
+          const Gap(AppSpacing.xs),
+
           // ── Sign out ──
           IconButton(
             icon: const Icon(
@@ -121,15 +139,12 @@ class _TaskListScreenState
             ),
             tooltip: 'تسجيل الخروج',
             onPressed: () async {
-              await ref
-                  .read(authRepositoryProvider)
-                  .signOut();
+              await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) {
                 context.go(RoutePaths.login);
               }
             },
           ),
-          const SizedBox(width: AppSpacing.xs),
         ],
       ),
 
@@ -139,8 +154,7 @@ class _TaskListScreenState
           // ── Filter bar ──────────────────────────────────
           _FilterBar(
             showCompleted: showCompleted,
-            onToggle: () =>
-                ref.read(showCompletedProvider.notifier).toggle(),
+            onToggle: () => ref.read(showCompletedProvider.notifier).toggle(),
             colorScheme: colorScheme,
             theme: theme,
           ),
@@ -151,75 +165,116 @@ class _TaskListScreenState
               data: (tasks) {
                 if (tasks.isEmpty) {
                   return EmptyTasks(
-                    onCreateTask: () =>
-                        context.push(RoutePaths.createTask),
+                    onCreateTask: () => context.push(RoutePaths.createTask),
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.only(
-                    top: AppSpacing.sm,
-                    bottom: 100, // FAB clearance
+                return SlidableAutoCloseBehavior(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(
+                      top: AppSpacing.sm,
+                      bottom: 100, // FAB clearance
+                    ),
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = tasks[index];
+
+                      // Resolve profile names for
+                      // assignment badges.
+                      String? assigneeName;
+                      String? creatorName;
+                      if (currentUserId != null) {
+                        if (task.assignedTo != currentUserId) {
+                          assigneeName = _resolveProfileName(
+                            task.assignedTo,
+                          );
+                        }
+                        if (task.createdBy != currentUserId) {
+                          creatorName = _resolveProfileName(
+                            task.createdBy,
+                          );
+                        }
+                      }
+
+                      final itemDelay = Duration(
+                        milliseconds: index * 75,
+                      );
+                      final hasAnimatedOnce = _animatedTaskIds.contains(
+                        task.id,
+                      );
+
+                      return _StaggeredTaskEntry(
+                        key: ValueKey(task.id),
+                        alreadyAnimated: hasAnimatedOnce,
+                        delay: itemDelay,
+                        onAnimationStarted: () {
+                          _animatedTaskIds.add(task.id);
+                        },
+                        child: TaskCard(
+                          task: task,
+                          currentUserId: currentUserId ?? '',
+                          assigneeName: assigneeName,
+                          creatorName: creatorName,
+                          onToggleComplete: () => ref
+                              .read(
+                                taskActionsProvider,
+                              )
+                              .toggleComplete(
+                                task.id,
+                                isCompleted: !task.isCompleted,
+                              ),
+                          onEdit: () async {
+                            await context.pushNamed(
+                              'editTask',
+                              pathParameters: {'id': task.id},
+                              extra: task,
+                            );
+                          },
+                          onDelete: () async {
+                            try {
+                              await ref
+                                  .read(taskActionsProvider)
+                                  .deleteTask(task.id);
+
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text(
+                                      'تم حذف المهمة بنجاح ✓',
+                                    ),
+                                    backgroundColor: colorScheme.primary,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                            } on Object catch (e, st) {
+                              dev.log(
+                                '[TaskListScreen] Failed to delete task '
+                                '${task.id}',
+                                name: 'TaskListScreen',
+                                error: e,
+                                stackTrace: st,
+                              );
+
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: const Text('فشل حذف المهمة'),
+                                    backgroundColor: colorScheme.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                            }
+                          },
+                        ),
+                      );
+                    },
                   ),
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-
-                    // Resolve profile names for
-                    // assignment badges.
-                    String? assigneeName;
-                    String? creatorName;
-                    if (currentUserId != null) {
-                      if (task.assignedTo !=
-                          currentUserId) {
-                        assigneeName =
-                            _resolveProfileName(
-                          task.assignedTo,
-                        );
-                      }
-                      if (task.createdBy !=
-                          currentUserId) {
-                        creatorName =
-                            _resolveProfileName(
-                          task.createdBy,
-                        );
-                      }
-                    }
-
-                    return TaskCard(
-                      task: task,
-                      currentUserId:
-                          currentUserId ?? '',
-                      assigneeName: assigneeName,
-                      creatorName: creatorName,
-                      onToggleComplete: () => ref
-                          .read(
-                            taskActionsProvider,
-                          )
-                          .toggleComplete(
-                            task.id,
-                            isCompleted:
-                                !task.isCompleted,
-                          ),
-                    )
-                        .animate()
-                        .fadeIn(
-                          delay: Duration(
-                            milliseconds: (index * 50)
-                                .clamp(0, 300),
-                          ),
-                          duration: 400.ms,
-                        )
-                        .slideX(
-                          begin: 0.05,
-                          delay: Duration(
-                            milliseconds: (index * 50)
-                                .clamp(0, 300),
-                          ),
-                          duration: 400.ms,
-                          curve: Curves.easeOutCubic,
-                        );
-                  },
                 );
               },
               loading: () => const _ShimmerList(),
@@ -238,8 +293,7 @@ class _TaskListScreenState
                 return _ErrorState(
                   error: error,
                   stack: stack,
-                  onRetry: () =>
-                      ref.invalidate(taskListProvider),
+                  onRetry: () => ref.invalidate(taskListProvider),
                 );
               },
             ),
@@ -249,8 +303,7 @@ class _TaskListScreenState
 
       // ── FAB ─────────────────────────────────────────────
       floatingActionButton: _AnimatedFab(
-        onPressed: () =>
-            context.push(RoutePaths.createTask),
+        onPressed: () => context.push(RoutePaths.createTask),
         colorScheme: colorScheme,
       ),
     );
@@ -284,44 +337,39 @@ class _FilterBar extends StatelessWidget {
       child: Row(
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: FilterChip(
-              selected: showCompleted,
-              onSelected: (_) => onToggle(),
-              avatar: AnimatedSwitcher(
-                duration: const Duration(
-                  milliseconds: 250,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: FilterChip(
+                  selected: showCompleted,
+                  onSelected: (_) => onToggle(),
+                  avatar: AnimatedSwitcher(
+                    duration: const Duration(
+                      milliseconds: 250,
+                    ),
+                    child: Icon(
+                      showCompleted
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
+                      key: ValueKey(showCompleted),
+                      size: 18,
+                    ),
+                  ),
+                  label: Text(
+                    showCompleted ? 'إخفاء المكتملة' : 'عرض المكتملة',
+                    style: theme.textTheme.labelMedium,
+                  ),
+                  selectedColor: colorScheme.primaryContainer,
+                  checkmarkColor: colorScheme.onPrimaryContainer,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: showCompleted
+                          ? colorScheme.primary.withValues(alpha: 0.3)
+                          : colorScheme.outlineVariant,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  showCompleted
-                      ? Icons.visibility_rounded
-                      : Icons.visibility_off_rounded,
-                  key: ValueKey(showCompleted),
-                  size: 18,
-                ),
-              ),
-              label: Text(
-                showCompleted
-                    ? 'إخفاء المكتملة'
-                    : 'عرض المكتملة',
-                style: theme.textTheme.labelMedium,
-              ),
-              selectedColor:
-                  colorScheme.primaryContainer,
-              checkmarkColor:
-                  colorScheme.onPrimaryContainer,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: showCompleted
-                      ? colorScheme.primary
-                          .withValues(alpha: 0.3)
-                      : colorScheme.outlineVariant,
-                ),
-              ),
-            ),
-          )
+              )
               .animate()
               .fadeIn(duration: 400.ms)
               .slideX(
@@ -349,32 +397,106 @@ class _AnimatedFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
-      onPressed: onPressed,
-      icon: const Icon(Icons.add_rounded),
-      label: const Text('مهمة جديدة'),
-      elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          AppSpacing.cardRadius,
-        ),
-      ),
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
-    )
-        .animate()
-        .fadeIn(delay: 300.ms, duration: 500.ms)
+    return TaskComposerHero(
+      child:
+          FloatingActionButton.extended(
+                onPressed: onPressed,
+                heroTag: null,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('مهمة جديدة'),
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppSpacing.cardRadius,
+                  ),
+                ),
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+              )
+              .animate()
+              .fadeIn(duration: 320.ms)
+              .slideY(
+                begin: 0.16,
+                duration: 420.ms,
+                curve: Curves.easeOutCubic,
+              )
+              .scale(
+                begin: const Offset(0.96, 0.96),
+                duration: 420.ms,
+                curve: Curves.easeOutCubic,
+              ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// One-shot staggered list item motion
+// ─────────────────────────────────────────────────────────────────────────
+
+class _StaggeredTaskEntry extends StatefulWidget {
+  const _StaggeredTaskEntry({
+    required this.alreadyAnimated,
+    required this.delay,
+    required this.onAnimationStarted,
+    required this.child,
+    super.key,
+  });
+
+  final bool alreadyAnimated;
+  final Duration delay;
+  final VoidCallback onAnimationStarted;
+  final Widget child;
+
+  @override
+  State<_StaggeredTaskEntry> createState() => _StaggeredTaskEntryState();
+}
+
+class _StaggeredTaskEntryState extends State<_StaggeredTaskEntry> {
+  late bool _hasAnimatedOnce;
+
+  @override
+  void initState() {
+    super.initState();
+    _hasAnimatedOnce = widget.alreadyAnimated;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shouldAnimate = !_hasAnimatedOnce;
+
+    return Animate(
+          delay: shouldAnimate ? widget.delay : Duration.zero,
+          autoPlay: shouldAnimate,
+          value: shouldAnimate ? 0 : 1,
+          onInit: shouldAnimate
+              ? (controller) {
+                  widget.onAnimationStarted();
+                }
+              : null,
+          onComplete: shouldAnimate
+              ? (controller) {
+                  if (mounted) {
+                    setState(() {
+                      _hasAnimatedOnce = true;
+                    });
+                  }
+                }
+              : null,
+          child: widget.child,
+        )
+        .fadeIn(
+          duration: 260.ms,
+          curve: Curves.easeOutQuart,
+        )
         .slideY(
-          begin: 0.4,
-          delay: 300.ms,
-          duration: 500.ms,
-          curve: Curves.easeOutBack,
+          begin: 0.15,
+          duration: 480.ms,
+          curve: Curves.easeOutCubic,
         )
         .scale(
-          begin: const Offset(0.8, 0.8),
-          delay: 300.ms,
-          duration: 500.ms,
-          curve: Curves.easeOutBack,
+          begin: const Offset(0.975, 0.975),
+          duration: 420.ms,
+          curve: Curves.easeOutCubic,
         );
   }
 }
@@ -397,19 +519,20 @@ class _ShimmerList extends StatelessWidget {
       itemCount: 5,
       itemBuilder: (context, index) {
         return Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.screenPaddingH,
-            vertical: AppSpacing.sm / 2,
-          ),
-          height: 88,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              AppSpacing.cardRadius,
-            ),
-            color: colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.4),
-          ),
-        )
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPaddingH,
+                vertical: AppSpacing.sm / 2,
+              ),
+              height: 88,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(
+                  AppSpacing.cardRadius,
+                ),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
+              ),
+            )
             .animate(
               onPlay: (c) => c.repeat(),
             )
@@ -418,8 +541,7 @@ class _ShimmerList extends StatelessWidget {
               delay: Duration(
                 milliseconds: index * 100,
               ),
-              color: colorScheme.surfaceContainerHigh
-                  .withValues(alpha: 0.5),
+              color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
             )
             .animate()
             .fadeIn(

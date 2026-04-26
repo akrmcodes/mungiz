@@ -64,9 +64,12 @@ class TaskRemoteRepository {
     String taskId, {
     required bool isCompleted,
   }) async {
-    await _client.from(SupabaseTables.tasks).update({
-      'is_completed': isCompleted,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', taskId);
+    await _client
+        .from(SupabaseTables.tasks)
+        .update({
+          'is_completed': isCompleted,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', taskId);
   }
 }

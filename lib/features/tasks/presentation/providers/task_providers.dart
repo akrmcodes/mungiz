@@ -69,30 +69,29 @@ class ShowCompleted extends _$ShowCompleted {
 /// recreates on return, causing a permanent AsyncLoading black screen.
 final StreamProvider<List<TaskEntry>> taskListProvider =
     StreamProvider<List<TaskEntry>>((ref) {
-  final userId =
-      Supabase.instance.client.auth.currentUser?.id;
+      final userId = Supabase.instance.client.auth.currentUser?.id;
 
-  if (userId == null) {
-    dev.log(
-      '[taskListProvider] No authenticated user — returning empty list.',
-      name: 'TaskProviders',
-    );
-    return Stream.value([]);
-  }
+      if (userId == null) {
+        dev.log(
+          '[taskListProvider] No authenticated user — returning empty list.',
+          name: 'TaskProviders',
+        );
+        return Stream.value([]);
+      }
 
-  dev.log(
-    '[taskListProvider] Subscribing to Drift stream for user $userId.',
-    name: 'TaskProviders',
-  );
+      dev.log(
+        '[taskListProvider] Subscribing to Drift stream for user $userId.',
+        name: 'TaskProviders',
+      );
 
-  final showCompleted = ref.watch(showCompletedProvider);
-  final repo = ref.watch(taskLocalRepositoryProvider);
+      final showCompleted = ref.watch(showCompletedProvider);
+      final repo = ref.watch(taskLocalRepositoryProvider);
 
-  return repo.watchTasks(
-    userId: userId,
-    showCompleted: showCompleted,
-  );
-});
+      return repo.watchTasks(
+        userId: userId,
+        showCompleted: showCompleted,
+      );
+    });
 
 // ─────────────────────────────────────────────────────────────────────────
 // Task actions — simple provider exposing the notifier
@@ -135,8 +134,7 @@ class TaskActionsNotifier {
     DateTime? dueAt,
     String? assignedTo,
   }) async {
-    final userId =
-        Supabase.instance.client.auth.currentUser?.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
     await _repo.insertTask(
@@ -159,5 +157,27 @@ class TaskActionsNotifier {
       taskId,
       isCompleted: isCompleted,
     );
+  }
+
+  /// Updates an existing task.
+  Future<void> updateTask({
+    required String taskId,
+    required String title,
+    required String assignedTo,
+    String? description,
+    DateTime? dueAt,
+  }) async {
+    await _repo.updateTask(
+      taskId: taskId,
+      title: title,
+      assignedTo: assignedTo,
+      description: description,
+      dueAt: dueAt,
+    );
+  }
+
+  /// Deletes a task, preserving pending-delete sync semantics.
+  Future<void> deleteTask(String taskId) async {
+    await _repo.deleteTask(taskId);
   }
 }

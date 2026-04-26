@@ -353,7 +353,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [x] Verify: stats update reactively as tasks are created/completed
 
 ---
-
+<!-- 
 ### Stage 10: Export & Sharing
 
 **Goal:** Enable users to export their task lists as PDF or Excel files — high business value for reporting.
@@ -383,7 +383,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [ ] Implement "Export as PDF" flow: generate → preview → share/save
 - [ ] Implement "Export as Excel" flow: generate → share/save
 - [ ] Verify: export works offline with local data
-- [ ] Verify: generated files open correctly on all platforms
+- [ ] Verify: generated files open correctly on all platforms -->
 
 ---
 
@@ -403,24 +403,20 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 
 **Task Checklist:**
 
-- [ ] Create `core/providers/theme_mode_provider.dart`: persisted theme mode (light/dark/system)
-- [ ] Add theme toggle switch to app settings or app bar
-- [ ] Wire theme mode provider into `MaterialApp.router`
-- [ ] Add shimmer/skeleton loading states to task list, dashboard, profile screens
-- [ ] Implement staggered list animations on task list with `flutter_animate`
-- [ ] Add hero/shared-element transitions for screen navigation
-- [ ] Create illustrated empty state widgets (no tasks, no results)
-- [ ] Add subtle micro-animations: FAB entrance, card press feedback, completion checkmark
-- [ ] Implement responsive layout with `LayoutBuilder` + max-width constraint (600px)
-- [ ] Test layouts at 360px, 390px, 768px breakpoints
-- [ ] Add `Semantics` labels to all tappable widgets
-- [ ] Verify 48×48 minimum touch targets
-- [ ] Audit color contrast for both light and dark themes (WCAG 2.1 AA)
-- [ ] Add `SafeArea` wrappers on all screens
-- [ ] Visual QA pass across Android, iOS, Web
+- [x] Create `core/providers/theme_mode_provider.dart`: persisted theme mode (light/dark/system)
+- [x] Add theme toggle switch to app settings or app bar
+- [x] Wire theme mode provider into `MaterialApp.router`
+- [x] Add shimmer/skeleton loading states to task list, dashboard, profile screens
+- [x] Implement staggered list animations on task list with `flutter_animate`
+- [x] Add hero/shared-element transitions for screen navigation
+- [x] Create illustrated empty state widgets (no tasks, no results)
+- [x] Add subtle micro-animations: FAB entrance, card press feedback, completion checkmark
+- [x] Audit color contrast for both light and dark themes (WCAG 2.1 AA)
+- [x] Add `SafeArea` wrappers on all screens
+- [x] Visual QA pass across Android, iOS, Web
 
 ---
-
+<!-- 
 ### Stage 12: Deployment & Launch
 
 **Goal:** Release to Google Play, App Store, and Web. Establish post-launch monitoring.
@@ -450,7 +446,7 @@ S1 ► S2 ► S3 ► S4 ► S5 ► S6 ► S7 ► S8
 - [ ] Integrate Sentry for crash reporting
 - [ ] Set up UptimeRobot for Supabase endpoint monitoring
 - [ ] Establish GitHub Issues templates + severity labels for bug triage
-- [ ] Document hotfix workflow and bi-weekly release cadence
+- [ ] Document hotfix workflow and bi-weekly release cadence -->
 
 ---
 

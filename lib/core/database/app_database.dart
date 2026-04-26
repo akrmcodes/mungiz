@@ -60,12 +60,10 @@ class Profiles extends Table {
   TextColumn get avatarUrl => text().nullable()();
 
   /// Timestamp when the profile was created.
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   /// Timestamp of the last profile update.
-  DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -85,33 +83,28 @@ class Tasks extends Table {
   TextColumn get description => text().nullable()();
 
   /// Whether the task has been marked as completed.
-  BoolColumn get isCompleted =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
 
   /// Optional due date/time.
   DateTimeColumn get dueAt => dateTime().nullable()();
 
   /// UUID of the user who created this task.
   @ReferenceName('createdTasks')
-  TextColumn get createdBy =>
-      text().references(Profiles, #id)();
+  TextColumn get createdBy => text().references(Profiles, #id)();
 
   /// UUID of the user this task is assigned to.
   @ReferenceName('assignedTasks')
-  TextColumn get assignedTo =>
-      text().references(Profiles, #id)();
+  TextColumn get assignedTo => text().references(Profiles, #id)();
 
   /// Synchronisation state of this row against the remote database.
-  IntColumn get syncStatus => intEnum<SyncStatus>()
-      .withDefault(Constant(SyncStatus.synced.index))();
+  IntColumn get syncStatus =>
+      intEnum<SyncStatus>().withDefault(Constant(SyncStatus.synced.index))();
 
   /// Timestamp when the task was created.
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   /// Timestamp of the last task update.
-  DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -139,8 +132,7 @@ class SyncQueue extends Table {
   TextColumn get payload => text()();
 
   /// Timestamp when the mutation was queued.
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // =============================================================================
@@ -178,6 +170,20 @@ class AppDatabase extends _$AppDatabase {
         // if (from < 2) { await m.addColumn(tasks, tasks.newColumn); }
       },
     );
+  }
+}
+
+/// Human-readable display label for a cached profile entry.
+extension ProfileEntryDisplayLabel on ProfileEntry {
+  /// Returns the display name when present, otherwise the email.
+  String? get displayLabel {
+    final name = displayName?.trim();
+    if (name != null && name.isNotEmpty) {
+      return name;
+    }
+
+    final normalizedEmail = email.trim();
+    return normalizedEmail.isNotEmpty ? normalizedEmail : null;
   }
 }
 

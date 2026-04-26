@@ -2,8 +2,9 @@
 ///
 /// Initialises the core infrastructure in the correct order:
 ///   1. Flutter bindings.
-///   2. Supabase (remote backend).
-///   3. Runs the app inside a Riverpod [ProviderScope].
+///   2. SharedPreferences (theme persistence).
+///   3. Supabase (remote backend).
+///   4. Runs the app inside a Riverpod [ProviderScope].
 ///
 /// The Drift database is lazily initialised via its Riverpod provider
 /// on first access — no explicit init step is needed here.
@@ -13,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mungiz/app.dart';
 import 'package:mungiz/core/constants/app_constants.dart';
+import 'package:mungiz/core/providers/shared_prefs_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Application bootstrap.
@@ -24,6 +27,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final prefs = await SharedPreferences.getInstance();
+
   // ── Supabase init ────────────────────────────────────────
   await Supabase.initialize(
     url: const String.fromEnvironment(EnvKeys.supabaseUrl),
@@ -34,8 +39,11 @@ Future<void> main() async {
 
   // ── Run app ──────────────────────────────────────────────
   runApp(
-    const ProviderScope(
-      child: MungizApp(),
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const MungizApp(),
     ),
   );
 }

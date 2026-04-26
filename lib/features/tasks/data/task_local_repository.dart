@@ -19,6 +19,14 @@ import 'package:uuid/uuid.dart';
 
 part 'task_local_repository.g.dart';
 
+String? _normalizeDisplayName(String? value) {
+  final normalized = value?.trim();
+  if (normalized == null || normalized.isEmpty) {
+    return null;
+  }
+  return normalized;
+}
+
 /// Provides the [TaskLocalRepository] singleton.
 @Riverpod(keepAlive: true)
 TaskLocalRepository taskLocalRepository(Ref ref) {
@@ -49,18 +57,17 @@ class TaskLocalRepository {
   }) {
     final query = _db.select(_db.tasks)
       ..where(
-        (t) =>
-            t.assignedTo.equals(userId) |
-            t.createdBy.equals(userId),
+        (t) => t.assignedTo.equals(userId) | t.createdBy.equals(userId),
       )
       ..where(
-        (t) => t.syncStatus.equalsValue(
-          SyncStatus.pendingDelete,
-        ).not(),
+        (t) => t.syncStatus
+            .equalsValue(
+              SyncStatus.pendingDelete,
+            )
+            .not(),
       )
       ..orderBy([
-        (t) =>
-            OrderingTerm.desc(t.createdAt),
+        (t) => OrderingTerm.desc(t.createdAt),
       ]);
 
     if (!showCompleted) {
@@ -102,7 +109,9 @@ class TaskLocalRepository {
       await _ensureProfileExists(effectiveAssignee);
     }
 
-    await _db.into(_db.tasks).insert(
+    await _db
+        .into(_db.tasks)
+        .insert(
           TasksCompanion.insert(
             id: id,
             title: title,
@@ -117,6 +126,12 @@ class TaskLocalRepository {
         );
   }
 
+  SyncStatus _syncStatusForMutation(TaskEntry task) {
+    return task.syncStatus == SyncStatus.pendingCreate
+        ? SyncStatus.pendingCreate
+        : SyncStatus.pendingUpdate;
+  }
+
   // ── FK helpers ───────────────────────────────────────────────────────────
 
   /// Ensures a [Profiles] row exists for [userId] so that the FK constraint
@@ -128,9 +143,9 @@ class TaskLocalRepository {
   ///   3. Supabase unreachable    → upsert a minimal stub (email = userId).
   Future<void> _ensureProfileExists(String userId) async {
     // 1. Already cached → nothing to do.
-    final existing = await (_db.select(_db.profiles)
-          ..where((p) => p.id.equals(userId)))
-        .getSingleOrNull();
+    final existing = await (_db.select(
+      _db.profiles,
+    )..where((p) => p.id.equals(userId))).getSingleOrNull();
     if (existing != null) return;
 
     log(
@@ -148,14 +163,16 @@ class TaskLocalRepository {
           .maybeSingle();
 
       if (data != null) {
-        await _db.into(_db.profiles).insertOnConflictUpdate(
+        await _db
+            .into(_db.profiles)
+            .insertOnConflictUpdate(
               ProfilesCompanion(
                 id: Value(data['id'] as String),
                 email: Value((data['email'] as String?) ?? userId),
-                displayName:
-                    Value(data['display_name'] as String?),
-                avatarUrl:
-                    Value(data['avatar_url'] as String?),
+                displayName: Value(
+                  _normalizeDisplayName(data['display_name'] as String?),
+                ),
+                avatarUrl: Value(data['avatar_url'] as String?),
               ),
             );
         log(
@@ -176,7 +193,9 @@ class TaskLocalRepository {
     // 3. Offline or no remote row → insert a minimal stub so the FK passes.
     //    The sync engine will overwrite this with real data later.
     final currentUser = Supabase.instance.client.auth.currentUser;
-    await _db.into(_db.profiles).insertOnConflictUpdate(
+    await _db
+        .into(_db.profiles)
+        .insertOnConflictUpdate(
           ProfilesCompanion(
             id: Value(userId),
             email: Value(currentUser?.email ?? userId),
@@ -199,12 +218,70 @@ class TaskLocalRepository {
     String taskId, {
     required bool isCompleted,
   }) async {
-    await (_db.update(_db.tasks)
-          ..where((t) => t.id.equals(taskId)))
-        .write(
+    final task = await getTaskById(taskId);
+    if (task == null || task.syncStatus == SyncStatus.pendingDelete) {
+      return;
+    }
+
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(taskId))).write(
       TasksCompanion(
         isCompleted: Value(isCompleted),
-        syncStatus: const Value(SyncStatus.pendingUpdate),
+        syncStatus: Value(_syncStatusForMutation(task)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Updates an existing task in the local database.
+  ///
+  /// Pending-create rows stay pending-create so the sync engine still
+  /// pushes them as a single create operation.
+  Future<void> updateTask({
+    required String taskId,
+    required String title,
+    required String assignedTo,
+    String? description,
+    DateTime? dueAt,
+  }) async {
+    final task = await getTaskById(taskId);
+    if (task == null || task.syncStatus == SyncStatus.pendingDelete) {
+      return;
+    }
+
+    await _ensureProfileExists(task.createdBy);
+    await _ensureProfileExists(assignedTo);
+
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(taskId))).write(
+      TasksCompanion(
+        title: Value(title),
+        description: Value(description),
+        dueAt: Value(dueAt),
+        assignedTo: Value(assignedTo),
+        syncStatus: Value(_syncStatusForMutation(task)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Marks a task for deletion, preserving offline sync semantics.
+  ///
+  /// Pending-create rows are removed locally because no remote row exists
+  /// yet. Synced or pending-update rows are marked pending-delete so the
+  /// sync engine can push the remote delete before removing them locally.
+  Future<void> deleteTask(String taskId) async {
+    final task = await getTaskById(taskId);
+    if (task == null || task.syncStatus == SyncStatus.pendingDelete) {
+      return;
+    }
+
+    if (task.syncStatus == SyncStatus.pendingCreate) {
+      await (_db.delete(_db.tasks)..where((t) => t.id.equals(taskId))).go();
+      return;
+    }
+
+    await (_db.update(_db.tasks)..where((t) => t.id.equals(taskId))).write(
+      TasksCompanion(
+        syncStatus: const Value(SyncStatus.pendingDelete),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -214,8 +291,7 @@ class TaskLocalRepository {
 
   /// Returns a single task by [id], or `null` if not found.
   Future<TaskEntry?> getTaskById(String id) async {
-    final query = _db.select(_db.tasks)
-      ..where((t) => t.id.equals(id));
+    final query = _db.select(_db.tasks)..where((t) => t.id.equals(id));
 
     return query.getSingleOrNull();
   }

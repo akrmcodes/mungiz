@@ -38,6 +38,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.3.1
+  flutter_slidable: ^4.0.3
   freezed_annotation: ^3.1.0
   gap: ^3.0.1
   go_router: ^17.2.2
@@ -46,6 +47,7 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
   riverpod_annotation: ^4.0.2
+  shared_preferences: ^2.2.2
   sqlite3_flutter_libs: ^0.5.0
   supabase_flutter: ^2.12.4
   uuid: ^4.5.3
